@@ -4,7 +4,7 @@ A free editor for the **Korg volca drum** inside REAPER, as one JSFX file. All p
 
 By NH4X. Version 1.0.1. Music: https://nh4x.bandcamp.com/
 
-![Volca Drum Panel in REAPER](screenshot.png)
+![Volca Drum Panel in REAPER](VolcaDrumPanel.gif)
 
 **New here? Go straight to [Setup](#setup-do-this-once-5-minutes). It takes 5 minutes, and step 2 is the one people miss.**
 
@@ -51,6 +51,8 @@ Press **SEND ALL** on the panel. Now the volca sounds exactly like what you see.
 **Playing it:** draw notes in a MIDI item on the same track (notes 65 / 67 / 69 / 71 / 72 / 74 = part 1-6). To play live from a keyboard, also arm the track and switch on input monitoring.
 
 ## How to use
+![The panel](screenshot.png)
+
 | Action | How |
 |---|---|
 | Change a value | Drag or mouse wheel on the bar |
