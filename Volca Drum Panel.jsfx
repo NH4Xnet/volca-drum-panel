@@ -1,5 +1,5 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 1.0 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 1.0.1 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
@@ -12,6 +12,7 @@ desc:Volca Drum Panel
 //
 // USE
 //  - Drag or mouse wheel = change, double-click = default, hover + type 0-127 + Enter = exact value.
+//    SEL (Select) drags slowly and relatively; one wheel notch = one combination.
 //  - The volca has no MIDI out: the panel only knows what it sent. SEND ALL pushes the whole kit
 //    (nothing is sent when a project loads).
 //  - Kits = REAPER presets of this plugin (preset menu at the top of the FX window). Loading one sends the changes.
@@ -274,6 +275,9 @@ function wlong(wi) ( wi==0 ? "MODEL" : wi==1 ? "DECAY" : wi==2 ? "BODY" : "TUNE"
 // SELECT = one of 45 combinations: n = v*45/128; EG steps fastest, then MOD, then SRC
 // (measured on the Volca 2026-11-03: 0=1/1/1, 3=1/1/2, 6=1/1/3, 9=1/2/1, 64=3/2/2, 127=5/3/3)
 function issel(i) local(o) ( i <= 132 ? (o = (i - 1) % 22; o == 0 || o == 7) : 0 );
+// combination number 0-44 of a Select value, and the value in the middle of combination n
+function selnum(v) ( floor(clampv(v) * 45 / 128) );
+function selval(n) ( floor((max(0, min(44, n)) + 0.5) * 128 / 45) );
 function selsrc(n) ( n==0 ? "SIN" : n==1 ? "SAW" : n==2 ? "HPN" : n==3 ? "LPN" : "BPN" );
 function selsrcl(n) ( n==0 ? "SINE" : n==1 ? "SAW" : n==2 ? "HP NOISE" : n==3 ? "LP NOISE" : "BP NOISE" );
 function selmod(n) ( n==0 ? "RISE-FALL" : n==1 ? "OSCILLATE" : "RANDOM" );
@@ -898,10 +902,13 @@ mouse_cap & 1 ? (
         lastclick_t = -1; drag = 0;
       ) : (
         lastclick_i = drag; lastclick_t = now;
+        sel_x0 = mouse_x; sel_n0 = selnum(slider(drag));   // Select: relative drag from here
       );
     );
   );
   drag > 0 ? (
+    // Select: relative + slow, one combination per S(10) px, always on a combination (45 on a narrow bar was too fast)
+    issel(drag) ? setparam(drag, selval(sel_n0 + floor((mouse_x - sel_x0) / S(10)))) :
     drag == 133 ? setparam(drag, mouse_x < bx[drag] + bw[drag] / 2 ? 0 : 127)
                 : setparam(drag, (mouse_x - bx[drag]) / bw[drag] * 127);
   ) : drag == -10 ? (
@@ -931,7 +938,10 @@ mouse_cap & 2 ? (
 
 mouse_wheel != 0 ? (
   hv = hit(mouse_x, mouse_y);
-  hv > 0 ? setparam(hv, slider(hv) + (mouse_wheel > 0 ? 1 : -1)) :
+  hv > 0 ? (
+    issel(hv) ? setparam(hv, selval(selnum(slider(hv)) + (mouse_wheel > 0 ? 1 : -1)))   // Select: one combination per notch
+              : setparam(hv, slider(hv) + (mouse_wheel > 0 ? 1 : -1));
+  ) :
   inr(amx, amy, amw, amh) ? setamt(slider(144) + (mouse_wheel > 0 ? 5 : -5)) :
   inr(mox, moy, mow, moh) ? setmorph(slider(148) + (mouse_wheel > 0 ? 5 : -5));
   mouse_wheel = 0;
