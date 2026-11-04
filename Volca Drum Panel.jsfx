@@ -1,0 +1,962 @@
+desc:Volca Drum Panel
+// VOLCA DRUM PANEL 1.0 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// Music: https://nh4x.bandcamp.com/
+//
+// SETUP
+//  1. Put this file into REAPER's Effects folder (Options > Show REAPER resource path > Effects), then
+//     add "JS: Volca Drum Panel" to a track.
+//  2. Track: MIDI hardware output = the port your volca drum is connected to.
+//  3. Volca: split channel mode (part 1-6 = MIDI channel 1-6, see the Korg manual). Waveguide CCs go out on channel 1.
+//  4. FILT and CLIP (purple row names) need the custom firmware "vdcf" by hj-oja (CC 54/55);
+//     on the stock Korg firmware they do nothing. Everything else works on stock firmware.
+//
+// USE
+//  - Drag or mouse wheel = change, double-click = default, hover + type 0-127 + Enter = exact value.
+//  - The volca has no MIDI out: the panel only knows what it sent. SEND ALL pushes the whole kit
+//    (nothing is sent when a project loads).
+//  - Kits = REAPER presets of this plugin (preset menu at the top of the FX window). Loading one sends the changes.
+//  - Click a part title = select that part. LINK = changes on one layer go to the other layer too.
+//  - SOUND (or right-click a part title): copy a part, paste it into another part (also across kits).
+//  - RANDOM: target (part / layer / kit), amount, ROLL, UNDO (also undoes a paste; press again = redo).
+//    Locks (amber) are skipped by every roll: right-click (or Shift+click) a bar = one cell,
+//    click a row name = that row in this part, right-click a row name = that row in all parts,
+//    Shift+click a part title = whole part. Locks are saved with the project, not in presets.
+//  - MORPH: SET A, SET B (snapshots of the whole kit, saved with the project), then move the bar.
+//    Select and WG Model switch at 50 %. Locked cells don't move. Tip: set A and B from two saved kits.
+//  - Note routing: notes 65/67/69/71/72/74 on any channel go out on channel 1-6 (= part 1-6),
+//    so one piano roll on one channel plays all parts. All other MIDI passes through.
+//  - All parameters are plugin parameters: automation and MIDI controllers (e.g. ReaLearn) work.
+//    Sliders 146 Roll / 147 Undo act as buttons (1 = fire), 148 = Morph.
+//
+// CC numbers: Korg "volca drum MIDI Implementation Chart (Split channel)" 2019.2.20 + vdcf README (54 FLT, 55 CLP).
+// Pitch quantize has no CC (front panel only). Fonts: Bahnschrift + Consolas (Windows).
+
+options:no_meter
+in_pin:none
+out_pin:none
+
+slider1:0<0,127,1>-P1 L1 Select
+slider2:100<0,127,1>-P1 L1 Level
+slider3:0<0,127,1>-P1 L1 EG Attack
+slider4:64<0,127,1>-P1 L1 EG Release
+slider5:64<0,127,1>-P1 L1 Pitch
+slider6:0<0,127,1>-P1 L1 Mod Amount
+slider7:64<0,127,1>-P1 L1 Mod Rate
+slider8:0<0,127,1>-P1 L2 Select
+slider9:100<0,127,1>-P1 L2 Level
+slider10:0<0,127,1>-P1 L2 EG Attack
+slider11:64<0,127,1>-P1 L2 EG Release
+slider12:64<0,127,1>-P1 L2 Pitch
+slider13:0<0,127,1>-P1 L2 Mod Amount
+slider14:64<0,127,1>-P1 L2 Mod Rate
+slider15:64<0,127,1>-P1 Pan
+slider16:0<0,127,1>-P1 Bit Reduction
+slider17:0<0,127,1>-P1 Fold
+slider18:0<0,127,1>-P1 Drive
+slider19:64<0,127,1>-P1 Gain
+slider20:0<0,127,1>-P1 WG Send
+slider21:64<0,127,1>-P1 Filter (vdcf)
+slider22:0<0,127,1>-P1 Clip (vdcf)
+slider23:0<0,127,1>-P2 L1 Select
+slider24:100<0,127,1>-P2 L1 Level
+slider25:0<0,127,1>-P2 L1 EG Attack
+slider26:64<0,127,1>-P2 L1 EG Release
+slider27:64<0,127,1>-P2 L1 Pitch
+slider28:0<0,127,1>-P2 L1 Mod Amount
+slider29:64<0,127,1>-P2 L1 Mod Rate
+slider30:0<0,127,1>-P2 L2 Select
+slider31:100<0,127,1>-P2 L2 Level
+slider32:0<0,127,1>-P2 L2 EG Attack
+slider33:64<0,127,1>-P2 L2 EG Release
+slider34:64<0,127,1>-P2 L2 Pitch
+slider35:0<0,127,1>-P2 L2 Mod Amount
+slider36:64<0,127,1>-P2 L2 Mod Rate
+slider37:64<0,127,1>-P2 Pan
+slider38:0<0,127,1>-P2 Bit Reduction
+slider39:0<0,127,1>-P2 Fold
+slider40:0<0,127,1>-P2 Drive
+slider41:64<0,127,1>-P2 Gain
+slider42:0<0,127,1>-P2 WG Send
+slider43:64<0,127,1>-P2 Filter (vdcf)
+slider44:0<0,127,1>-P2 Clip (vdcf)
+slider45:0<0,127,1>-P3 L1 Select
+slider46:100<0,127,1>-P3 L1 Level
+slider47:0<0,127,1>-P3 L1 EG Attack
+slider48:64<0,127,1>-P3 L1 EG Release
+slider49:64<0,127,1>-P3 L1 Pitch
+slider50:0<0,127,1>-P3 L1 Mod Amount
+slider51:64<0,127,1>-P3 L1 Mod Rate
+slider52:0<0,127,1>-P3 L2 Select
+slider53:100<0,127,1>-P3 L2 Level
+slider54:0<0,127,1>-P3 L2 EG Attack
+slider55:64<0,127,1>-P3 L2 EG Release
+slider56:64<0,127,1>-P3 L2 Pitch
+slider57:0<0,127,1>-P3 L2 Mod Amount
+slider58:64<0,127,1>-P3 L2 Mod Rate
+slider59:64<0,127,1>-P3 Pan
+slider60:0<0,127,1>-P3 Bit Reduction
+slider61:0<0,127,1>-P3 Fold
+slider62:0<0,127,1>-P3 Drive
+slider63:64<0,127,1>-P3 Gain
+slider64:0<0,127,1>-P3 WG Send
+slider65:64<0,127,1>-P3 Filter (vdcf)
+slider66:0<0,127,1>-P3 Clip (vdcf)
+slider67:0<0,127,1>-P4 L1 Select
+slider68:100<0,127,1>-P4 L1 Level
+slider69:0<0,127,1>-P4 L1 EG Attack
+slider70:64<0,127,1>-P4 L1 EG Release
+slider71:64<0,127,1>-P4 L1 Pitch
+slider72:0<0,127,1>-P4 L1 Mod Amount
+slider73:64<0,127,1>-P4 L1 Mod Rate
+slider74:0<0,127,1>-P4 L2 Select
+slider75:100<0,127,1>-P4 L2 Level
+slider76:0<0,127,1>-P4 L2 EG Attack
+slider77:64<0,127,1>-P4 L2 EG Release
+slider78:64<0,127,1>-P4 L2 Pitch
+slider79:0<0,127,1>-P4 L2 Mod Amount
+slider80:64<0,127,1>-P4 L2 Mod Rate
+slider81:64<0,127,1>-P4 Pan
+slider82:0<0,127,1>-P4 Bit Reduction
+slider83:0<0,127,1>-P4 Fold
+slider84:0<0,127,1>-P4 Drive
+slider85:64<0,127,1>-P4 Gain
+slider86:0<0,127,1>-P4 WG Send
+slider87:64<0,127,1>-P4 Filter (vdcf)
+slider88:0<0,127,1>-P4 Clip (vdcf)
+slider89:0<0,127,1>-P5 L1 Select
+slider90:100<0,127,1>-P5 L1 Level
+slider91:0<0,127,1>-P5 L1 EG Attack
+slider92:64<0,127,1>-P5 L1 EG Release
+slider93:64<0,127,1>-P5 L1 Pitch
+slider94:0<0,127,1>-P5 L1 Mod Amount
+slider95:64<0,127,1>-P5 L1 Mod Rate
+slider96:0<0,127,1>-P5 L2 Select
+slider97:100<0,127,1>-P5 L2 Level
+slider98:0<0,127,1>-P5 L2 EG Attack
+slider99:64<0,127,1>-P5 L2 EG Release
+slider100:64<0,127,1>-P5 L2 Pitch
+slider101:0<0,127,1>-P5 L2 Mod Amount
+slider102:64<0,127,1>-P5 L2 Mod Rate
+slider103:64<0,127,1>-P5 Pan
+slider104:0<0,127,1>-P5 Bit Reduction
+slider105:0<0,127,1>-P5 Fold
+slider106:0<0,127,1>-P5 Drive
+slider107:64<0,127,1>-P5 Gain
+slider108:0<0,127,1>-P5 WG Send
+slider109:64<0,127,1>-P5 Filter (vdcf)
+slider110:0<0,127,1>-P5 Clip (vdcf)
+slider111:0<0,127,1>-P6 L1 Select
+slider112:100<0,127,1>-P6 L1 Level
+slider113:0<0,127,1>-P6 L1 EG Attack
+slider114:64<0,127,1>-P6 L1 EG Release
+slider115:64<0,127,1>-P6 L1 Pitch
+slider116:0<0,127,1>-P6 L1 Mod Amount
+slider117:64<0,127,1>-P6 L1 Mod Rate
+slider118:0<0,127,1>-P6 L2 Select
+slider119:100<0,127,1>-P6 L2 Level
+slider120:0<0,127,1>-P6 L2 EG Attack
+slider121:64<0,127,1>-P6 L2 EG Release
+slider122:64<0,127,1>-P6 L2 Pitch
+slider123:0<0,127,1>-P6 L2 Mod Amount
+slider124:64<0,127,1>-P6 L2 Mod Rate
+slider125:64<0,127,1>-P6 Pan
+slider126:0<0,127,1>-P6 Bit Reduction
+slider127:0<0,127,1>-P6 Fold
+slider128:0<0,127,1>-P6 Drive
+slider129:64<0,127,1>-P6 Gain
+slider130:0<0,127,1>-P6 WG Send
+slider131:64<0,127,1>-P6 Filter (vdcf)
+slider132:0<0,127,1>-P6 Clip (vdcf)
+slider133:0<0,127,1>-WG Model
+slider134:64<0,127,1>-WG Decay
+slider135:64<0,127,1>-WG Body
+slider136:64<0,127,1>-WG Tune
+slider137:0<0,1000,1>-Send all (any change sends the whole kit)
+slider138:0<0,1,1{off,on}>-P1 Link L1+L2
+slider139:0<0,1,1{off,on}>-P2 Link L1+L2
+slider140:0<0,1,1{off,on}>-P3 Link L1+L2
+slider141:0<0,1,1{off,on}>-P4 Link L1+L2
+slider142:0<0,1,1{off,on}>-P5 Link L1+L2
+slider143:0<0,1,1{off,on}>-P6 Link L1+L2
+// Randomize. Cell locks + morph snapshots are saved with the project (@serialize)
+slider144:50<0,100,1>-Rnd Amount %
+slider145:0<0,3,1{Part,Layer 1,Layer 2,Kit}>-Rnd Target
+slider146:0<0,1,1>-Rnd Roll (button: 1 = roll, resets to 0)
+slider147:0<0,1,1>-Rnd Undo (button: 1 = undo/redo, resets to 0)
+slider148:0<0,100,1>-Morph A>B %
+
+@init
+ext_noinit = 1;
+NS = 136;          // sound parameters; slider 137 = Send all
+SA_IDX = 137;
+MAXSEND = 8;       // CCs per block, keeps a full kit dump from flooding the 31.25k MIDI line
+
+last = 0;          // [1..136] last sent value
+dirty = 200;       // [1..136] waiting to be sent
+cc = 400;          // [1..136] CC number
+chn = 600;         // [1..136] MIDI channel 0-5
+bx = 800; by = 1000; bw = 1200; bh = 1400;   // bar rectangles from @gfx, for mouse hits
+lkx = 2100; lky = 2110;   // LINK button positions per part
+
+// Slider layout per part (22): L1 x7, L2 x7, part x8. Then waveguide x4.
+lcc = 1600; lcc[0]=14; lcc[1]=17; lcc[2]=20; lcc[3]=23; lcc[4]=26; lcc[5]=29; lcc[6]=46;   // layer 1, layer 2 = +1
+pcc = 1610; pcc[0]=10; pcc[1]=49; pcc[2]=50; pcc[3]=51; pcc[4]=52; pcc[5]=103; pcc[6]=54; pcc[7]=55;
+i = 1;
+loop(132,
+  o = (i - 1) % 22;
+  cc[i] = o < 7 ? lcc[o] : o < 14 ? lcc[o - 7] + 1 : pcc[o - 14];
+  chn[i] = floor((i - 1) / 22);
+  i += 1;
+);
+loop(4, cc[i] = 116 + i - 133; chn[i] = 0; i += 1;);
+
+// defaults (double-click), same as the slider lines above
+dflt = 1800;
+dl = 1620; dl[0]=0; dl[1]=100; dl[2]=0; dl[3]=64; dl[4]=64; dl[5]=0; dl[6]=64;
+dp = 1630; dp[0]=64; dp[1]=0; dp[2]=0; dp[3]=0; dp[4]=64; dp[5]=0; dp[6]=64; dp[7]=0;
+i = 1;
+loop(132, o = (i - 1) % 22; dflt[i] = o < 7 ? dl[o] : o < 14 ? dl[o - 7] : dp[o - 14]; i += 1;);
+dflt[133] = 0; dflt[134] = 64; dflt[135] = 64; dflt[136] = 64;
+tlen = 0; tval = 0; tparam = 0;   // typed number entry
+lastclick_t = -1; lastclick_i = 0;
+
+// note -> part channel (0-5), -1 = pass unchanged
+nmap = 2200; i = 0; loop(128, nmap[i] = -1; i += 1;);
+nmap[65] = 0; nmap[67] = 1; nmap[69] = 2; nmap[71] = 3; nmap[72] = 4; nmap[74] = 5;
+
+sync_pending = 1;  // first @block takes over the loaded values without sending
+lastchg = 0;       // >0 slider index, -1 = many at once (preset), -3 = message in #rm
+nchg = 0;
+lastchg_t = 0;
+sendall_t = -100;
+drag = 0;
+mdown = 0;
+fp = 0;            // focused part 0-5, 6 = waveguide
+
+// ---- randomize ----
+// memory: ub 2400 (undo buffer), labx/laby/labq 2600/2700/2800 (lock label hits), sgx/sgy 3000/3010, rlo/rhi/rbs 3100/3120/3140, lockm 3200
+ub = 2400; labx = 2600; laby = 2700; labq = 2800; sgx = 3000; sgy = 3010;
+rlo = 3100; rhi = 3120; rbs = 3140;
+// random range per row q (0-6 layer SEL LVL ATT REL PIT MOD RATE, 7-14 PAN BIT FOLD DRIVE GAIN SEND FILT CLIP, 16-18 WG DECAY BODY TUNE)
+// drum-friendly: short attack, level never too quiet, filter never fully closed. rbs = 1: low values more likely
+function rset(q, lo, hi, b) ( rlo[q] = lo; rhi[q] = hi; rbs[q] = b; );
+rset(0, 0, 127, 0); rset(1, 70, 127, 0); rset(2, 0, 45, 1); rset(3, 10, 115, 0);
+rset(4, 0, 127, 0); rset(5, 0, 127, 0); rset(6, 0, 127, 0);
+rset(7, 30, 98, 0); rset(8, 0, 127, 1); rset(9, 0, 127, 1); rset(10, 0, 127, 1);
+rset(11, 40, 100, 0); rset(12, 0, 90, 1); rset(13, 24, 104, 0); rset(14, 0, 127, 0);
+rset(15, 0, 127, 0); rset(16, 0, 127, 0); rset(17, 0, 127, 0); rset(18, 0, 127, 0);
+undo_ok = 0; undone = 0; roll_t = -100;
+// cell locks [1..136]: right-click a bar, or click a row name (= that row in that part). Saved with the project (@serialize)
+// default: LVL (both layers), PAN, GAIN locked in every part
+lockm = 3200;
+plock = 3400;      // part lock [0-5], [6] = waveguide (Shift+click the part title; click = select, right-click = SOUND menu)
+ptx = 3410; pty = 3420; ptw = 3430;   // title rectangles for clicks
+LR = 0.95; LG = 0.65; LB = 0.15;   // lock colour amber (red = focus/activity)
+p = 0; loop(6, lockm[p * 22 + 2] = lockm[p * 22 + 9] = lockm[p * 22 + 15] = lockm[p * 22 + 19] = 1; p += 1;);
+
+function clampv(v) ( max(0, min(127, floor(v + 0.5))) );
+
+// part param index 0-7 (Pan..Clip), or -1
+function pm(i) local(o) ( i <= 132 ? (o = (i - 1) % 22; o >= 14 ? o - 14 : -1) : -1 );
+// layer 1/2, or 0
+function layer(i) local(o) ( i <= 132 ? (o = (i - 1) % 22; o < 7 ? 1 : o < 14 ? 2 : 0) : 0 );
+
+function shortname(k) ( k==0 ? "SEL" : k==1 ? "LVL" : k==2 ? "ATT" : k==3 ? "REL" : k==4 ? "PIT" : k==5 ? "MOD" : "RATE" );
+function longname(k) ( k==0 ? "SELECT" : k==1 ? "LEVEL" : k==2 ? "EG ATTACK" : k==3 ? "EG RELEASE" : k==4 ? "PITCH" : k==5 ? "MOD AMOUNT" : "MOD RATE" );
+function pshort(mi) ( mi==0 ? "PAN" : mi==1 ? "BIT" : mi==2 ? "FOLD" : mi==3 ? "DRIVE" : mi==4 ? "GAIN" : mi==5 ? "SEND" : mi==6 ? "FILT" : "CLIP" );
+function plong(mi) ( mi==0 ? "PAN" : mi==1 ? "BIT REDUCTION" : mi==2 ? "FOLD" : mi==3 ? "DRIVE" : mi==4 ? "GAIN" : mi==5 ? "WAVEGUIDE SEND" : mi==6 ? "FILTER" : "CLIP" );
+// display order (rows top to bottom)
+function lord(r) ( r==0 ? 0 : r==1 ? 4 : r==2 ? 5 : r==3 ? 6 : r==4 ? 2 : r==5 ? 3 : 1 );   // SEL PIT MOD RATE ATT REL LVL
+function mord(r) ( r==0 ? 1 : r==1 ? 2 : r==2 ? 3 : r==3 ? 7 : r==4 ? 6 : r==5 ? 0 : r==6 ? 5 : 4 );   // BIT FOLD DRV CLIP FILT PAN SEND GAIN
+function wlong(wi) ( wi==0 ? "MODEL" : wi==1 ? "DECAY" : wi==2 ? "BODY" : "TUNE" );
+
+// value as text into string slot s
+// SELECT = one of 45 combinations: n = v*45/128; EG steps fastest, then MOD, then SRC
+// (measured on the Volca 2026-11-03: 0=1/1/1, 3=1/1/2, 6=1/1/3, 9=1/2/1, 64=3/2/2, 127=5/3/3)
+function issel(i) local(o) ( i <= 132 ? (o = (i - 1) % 22; o == 0 || o == 7) : 0 );
+function selsrc(n) ( n==0 ? "SIN" : n==1 ? "SAW" : n==2 ? "HPN" : n==3 ? "LPN" : "BPN" );
+function selsrcl(n) ( n==0 ? "SINE" : n==1 ? "SAW" : n==2 ? "HP NOISE" : n==3 ? "LP NOISE" : "BP NOISE" );
+function selmod(n) ( n==0 ? "RISE-FALL" : n==1 ? "OSCILLATE" : "RANDOM" );
+function seleg(n) ( n==0 ? "LIN" : n==1 ? "EXP" : "MULTI" );
+function sellong(v, s) local(n) (
+  n = floor(v * 45 / 128);
+  sprintf(s, "%s · %s · %s", selsrcl(floor(n / 9)), selmod(floor(n / 3) % 3), seleg(n % 3));
+);
+
+function fmtval(i, v, s) local(mi, f) (
+  mi = pm(i);
+  issel(i) ? strcpy(s, selsrc(floor(floor(v * 45 / 128) / 9))) :
+  i == 133 ? strcpy(s, v < 64 ? "TUBE" : "STRING") :
+  mi == 0 ? (v == 64 ? strcpy(s, "C") : v < 64 ? sprintf(s, "L%d", 64 - v) : sprintf(s, "R%d", v - 64)) :
+  mi == 6 ? (v == 64 ? strcpy(s, "OFF") :
+            v < 64 ? sprintf(s, "LP %d", floor((64 - v) * 100 / 64 + 0.5)) : sprintf(s, "HP %d", floor((v - 64) * 100 / 63 + 0.5))) :
+  mi == 7 ? strcpy(s, v < 64 ? "SOFT" : "HARD") :
+  sprintf(s, "%d", v);
+);
+
+function markchange(i) (
+  lastchg = i;
+  lastchg_t = time_precise();
+  i > 0 ? fp = i <= 132 ? floor((i - 1) / 22) : 6;
+);
+
+// from @gfx: set, notify host, queue
+// Link L1+L2 (sliders 138-143): a change on one layer is copied to the same parameter on the other
+function partner(i) local(o) ( i <= 132 ? (o = (i - 1) % 22; o < 7 ? i + 7 : o < 14 ? i - 7 : 0) : 0 );
+function linked(i) ( slider(138 + floor((i - 1) / 22)) >= 0.5 );
+function mirror(i, v) local(j) (
+  j = partner(i);
+  j > 0 && linked(i) && clampv(slider(j)) != v ? (
+    slider(j) = v; slider_automate(slider(j)); last[j] = v; dirty[j] = 1;
+  );
+);
+
+function setparam(i, v) (
+  v = clampv(v);
+  v != slider(i) ? (
+    slider(i) = v;
+    slider_automate(slider(i));
+    last[i] = v;
+    dirty[i] = 1;
+    markchange(i);
+    mirror(i, v);
+  );
+);
+
+function sendall() local(i) (
+  i = 1; loop(NS, dirty[i] = 1; i += 1;);
+  sendall_t = time_precise();
+);
+
+// set + notify host + queue, no readout change (randomize / undo)
+function putv(i, v) (
+  v = clampv(v);
+  v != clampv(slider(i)) ? (slider(i) = v; slider_automate(slider(i)); last[i] = v; dirty[i] = 1;);
+);
+// randomize write: skips locked cells
+function rput(i, v) ( !lockm[i] ? putv(i, v); );
+// row r (0-6 layer row k, 7-14 part row) of part p: 1 = every cell locked
+function rowlocked(p, r) ( r < 7 ? lockm[p * 22 + 1 + r] && lockm[p * 22 + 8 + r] : lockm[p * 22 + 8 + r] );
+function setrow(p, r, v) (
+  r < 7 ? (lockm[p * 22 + 1 + r] = v; lockm[p * 22 + 8 + r] = v;) : (lockm[p * 22 + 8 + r] = v;);
+);
+function togglerow(p, r) ( setrow(p, r, !rowlocked(p, r)); );
+// same row in all 6 parts: lock all, or unlock all if every part is already locked
+function togglerowall(r) local(p, a) (
+  a = 1; p = 0; loop(6, !rowlocked(p, r) ? a = 0; p += 1;);
+  p = 0; loop(6, setrow(p, r, !a); p += 1;);
+);
+// new value: move from the current value towards a random one by Amount (100% = fully random)
+function rv(i, q) local(x) (
+  x = rand(1); rbs[q] ? x = x * x;
+  slider(i) + slider(144) / 100 * (rlo[q] + (rhi[q] - rlo[q]) * x - slider(i));
+);
+// w: 0 = whole part, 1 = layer 1, 2 = layer 2. Link L1+L2 on: both layers get the same value
+function rollpart(p, w) local(lk, k, a, b, v, mi) (
+  lk = slider(138 + p) >= 0.5;
+  k = 0;
+  loop(7,
+    a = p * 22 + 1 + k; b = a + 7;
+    w == 2 ? (
+      v = rv(b, k); rput(b, v); lk ? rput(a, v);
+    ) : (
+      v = rv(a, k); rput(a, v);
+      w == 1 ? (lk ? rput(b, v);) : rput(b, lk ? v : rv(b, k));
+    );
+    k += 1;
+  );
+  w == 0 ? (
+    mi = 0;
+    loop(8, rput(p * 22 + 15 + mi, rv(p * 22 + 15 + mi, 7 + mi)); mi += 1;);
+  );
+);
+function rollwg() local(q) (
+  rand(1) < slider(144) / 100 ? rput(133, rand(1) < 0.5 ? 0 : 127);
+  q = 1; loop(3, rput(133 + q, rv(133 + q, 15 + q)); q += 1;);
+);
+// undo buffer = state before a roll / paste / sound or kit load; tag = what it was (for the readout)
+function snapundo(tag) local(i) (
+  i = 1; loop(NS, ub[i] = clampv(slider(i)); i += 1;);
+  undo_ok = 1; undone = 0; strcpy(#ul, tag);
+);
+// target: Part / Layer = the focused part (waveguide if that is focused), Kit = all parts + waveguide
+// part lock plock[0-5] / plock[6] = waveguide: skipped by every roll
+function doroll() local(i, t, p) (
+  t = floor(slider(145) + 0.5);
+  t != 3 && plock[fp] ? (
+    fp == 6 ? strcpy(#rm, "WAVEGUIDE IS LOCKED") : sprintf(#rm, "PART %d IS LOCKED", fp + 1);
+  ) : (
+  snapundo("ROLL"); 
+  t == 3 ? (
+    p = 0; loop(6, !plock[p] ? rollpart(p, 0); p += 1;); !plock[6] ? rollwg();
+    sprintf(#rm, "RANDOM · KIT · %d%%", slider(144));
+  ) : fp == 6 ? (
+    rollwg(); sprintf(#rm, "RANDOM · WAVEGUIDE · %d%%", slider(144));
+  ) : (
+    rollpart(fp, t);
+    t == 0 ? sprintf(#rm, "RANDOM · PART %d · %d%%", fp + 1, slider(144))
+           : sprintf(#rm, "RANDOM · PART %d · LAYER %d · %d%%", fp + 1, t, slider(144));
+  );
+  roll_t = time_precise();
+  );
+  lastchg = -3; lastchg_t = time_precise();
+);
+// undo swaps with the state before the roll, so pressing it again = redo
+function doundo() local(i, t) (
+  undo_ok ? (
+    i = 1; loop(NS, t = clampv(slider(i)); putv(i, ub[i]); ub[i] = t; i += 1;);
+    undone = !undone; 
+    undone ? sprintf(#rm, "UNDO · BACK TO BEFORE THE %s", #ul) : sprintf(#rm, "REDO · %s IS BACK", #ul);
+    lastchg = -3; lastchg_t = time_precise();
+  );
+);
+
+// ---- morph A > B ----
+// SET A / SET B = snapshot of the whole kit. Saved with the project.
+// Morph slider 148: 0 = A, 100 = B. Select and WG Model switch at 50 %. Locked cells / parts don't move.
+ma = 3500; mb = 3700;   // [1..136]
+function setab(w) local(i, d) (
+  d = w ? mb : ma;
+  i = 1; loop(NS, d[i] = clampv(slider(i)); i += 1;);
+  w ? (mb_ok = 1; strcpy(#nb, "SET"); strcpy(#rm, "MORPH · B SET");) : (ma_ok = 1; strcpy(#na, "SET"); strcpy(#rm, "MORPH · A SET"););
+  lastchg = -3; lastchg_t = time_precise();
+);
+function domorph() local(i, m, pt) (
+  ma_ok && mb_ok ? (
+    m = slider(148) / 100;
+    i = 1;
+    loop(NS,
+      pt = i <= 132 ? floor((i - 1) / 22) : 6;
+      !lockm[i] && !plock[pt] ? (
+        issel(i) || i == 133 ? rput(i, m < 0.5 ? ma[i] : mb[i]) : rput(i, ma[i] + (mb[i] - ma[i]) * m);
+      );
+      i += 1;
+    );
+    sprintf(#rm, "MORPH · A > B · %d%%", slider(148));
+  ) : strcpy(#rm, "MORPH · SET A AND B FIRST");
+  lastchg = -3; lastchg_t = time_precise();
+);
+
+// ---- copy/paste a part ----
+cb = 3900;      // clipboard [0..21] (one part)
+open_menu = 0;
+function msg() ( lastchg = -3; lastchg_t = time_precise(); );
+function copypart() local(j) (
+  fp == 6 ? strcpy(#rm, "COPY · CLICK A PART FIRST") : (
+    j = 0; loop(22, cb[j] = clampv(slider(fp * 22 + 1 + j)); j += 1;);
+    cb_ok = 1; cb_from = fp;
+    sprintf(#rm, "COPIED · PART %d", fp + 1);
+  );
+  msg();
+);
+function pastepart() local(j) (
+  !cb_ok ? strcpy(#rm, "PASTE · COPY A PART FIRST") : fp == 6 ? strcpy(#rm, "PASTE · CLICK A PART FIRST") : (
+    snapundo("PASTE");
+    j = 0; loop(22, putv(fp * 22 + 1 + j, cb[j]); j += 1;);
+
+    sprintf(#rm, "PASTED · PART %d > PART %d", cb_from + 1, fp + 1);
+  );
+  msg();
+);
+
+@slider
+!sync_pending ? (
+  nchg = 0;
+  i = 1;
+  loop(NS,
+    v = clampv(slider(i));
+    v != last[i] ? (last[i] = v; dirty[i] = 1; nchg += 1; ch_i = i;);
+    i += 1;
+  );
+  // mirror only single changes (knob/automation), never kit loads or the Both pages
+  nchg == 1 ? (markchange(ch_i); mirror(ch_i, last[ch_i]);) : nchg > 1 ? (
+    lastchg = -1; lastchg_t = time_precise();
+    lastn = nchg;
+  );
+  slider(SA_IDX) != last_sendall ? (last_sendall = slider(SA_IDX); sendall(););
+  // Roll / Undo buttons (automation / MIDI controller): fire on 1, reset to 0
+  slider(146) >= 0.5 ? (slider(146) = 0; slider_automate(slider(146)); doroll(););
+  slider(147) >= 0.5 ? (slider(147) = 0; slider_automate(slider(147)); doundo(););
+  slider(148) != last_morph ? (last_morph = slider(148); domorph(););
+);
+
+@block
+// incoming MIDI: re-channel drum notes (note on/off, poly aftertouch), pass the rest
+while (midirecv(mofs, m1, m2, m3)) (
+  mt = m1 & $xF0;
+  (mt == $x80 || mt == $x90 || mt == $xA0) && nmap[m2] >= 0 ? m1 = mt | nmap[m2];
+  midisend(mofs, m1, m2, m3);
+);
+sync_pending ? (
+  i = 1; loop(NS, last[i] = clampv(slider(i)); dirty[i] = 0; i += 1;);
+  last_sendall = slider(SA_IDX); last_morph = slider(148);
+  sync_pending = 0;
+);
+n = 0;
+i = 1;
+loop(NS,
+  n < MAXSEND && dirty[i] ? (
+    midisend(0, $xB0 | chn[i], cc[i], last[i]);
+    dirty[i] = 0;
+    n += 1;
+  );
+  i += 1;
+);
+
+@serialize
+// v1 = cell locks, v2 = + part locks, v3 = + morph A/B. Old projects without data keep the defaults from @init
+file_avail(0) >= 0 ? (
+  sver = 0; file_var(0, sver);
+  sver >= 1 ? file_mem(0, lockm + 1, 136);
+  sver >= 2 ? file_mem(0, plock, 7);
+  sver >= 3 ? (file_var(0, ma_ok); file_var(0, mb_ok); file_mem(0, ma + 1, 136); file_mem(0, mb + 1, 136); file_string(0, #na); file_string(0, #nb););
+) : (
+  sver = 3; file_var(0, sver); file_mem(0, lockm + 1, 136); file_mem(0, plock, 7);
+  file_var(0, ma_ok); file_var(0, mb_ok); file_mem(0, ma + 1, 136); file_mem(0, mb + 1, 136); file_string(0, #na); file_string(0, #nb);
+);
+
+@gfx 1280 810
+// everything scales with the window (design size 980 x 620); drag the FX window corner to resize
+// look: gunmetal + warning red. Fonts: Bahnschrift (labels), Consolas (values)
+sc = max(0.8, min(gfx_w / 980, gfx_h / 620));
+function S(v) ( floor(v * sc + 0.5) );
+function col(r, g, b, a) ( gfx_r = r; gfx_g = g; gfx_b = b; gfx_a = a; );
+function txt(s, x, y) ( gfx_x = x; gfx_y = y; gfx_drawstr(s); );
+function ctxt(s, x, y, wi) local(tw, th) ( gfx_measurestr(s, tw, th); gfx_x = x + (wi - tw) / 2; gfx_y = y; gfx_drawstr(s); );
+function frame(x, y, w, h) ( gfx_rect(x, y, w, 1); gfx_rect(x, y + h - 1, w, 1); gfx_rect(x, y, 1, h); gfx_rect(x + w - 1, y, 1, h); );
+// accent text with a soft LED glow; a = brightness 0-1
+function glowtxt(s, x, y, a) (
+  col(AR, AG, AB, 0.07 * a); txt(s, x - 2, y); txt(s, x + 2, y); txt(s, x, y - 2); txt(s, x, y + 2);
+  col(AR, AG, AB, 0.16 * a); txt(s, x - 1, y); txt(s, x + 1, y); txt(s, x, y - 1); txt(s, x, y + 1);
+  col(AR, AG, AB, 0.45 + 0.55 * a); txt(s, x, y);
+);
+function screw(x, y) (
+  col(0.23, 0.25, 0.27, 1); gfx_circle(x, y, S(3), 1, 1);
+  col(0.36, 0.38, 0.41, 1); gfx_line(x - S(2), y + S(1), x + S(2), y - S(1));
+);
+
+// kind: 1 = layer 1, 2 = layer 2, 3 = part, 4 = waveguide
+function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
+  bx[i] = x; by[i] = y; bw[i] = wi; bh[i] = h;
+  v = clampv(slider(i));
+  hot = (i == lastchg) ? max(0.35, 1 - (now - lastchg_t) / 4) : 0;
+  col(0.071, 0.075, 0.082, 1); gfx_rect(x, y, wi, h);
+  kind == 1 ? col(AR, AG, AB, 0.72 + 0.28 * hot) :
+  kind == 2 ? col(0.62, 0.70, 0.77, 0.55 + 0.35 * hot) :
+              col(0.79, 0.80, 0.82, 0.40 + 0.45 * hot);
+  lockm[i] ? gfx_a *= 0.4;   // locked for randomize: dimmed + red strip
+  (pm(i) == 0 || pm(i) == 6) ? (
+    f = (v - 64) / 64 * (wi / 2);
+    f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
+    col(0.29, 0.31, 0.33, 1); gfx_rect(x + wi / 2, y + 2, 1, h - 4);
+  ) : i == 133 ? (
+    v < 64 ? gfx_rect(x, y, wi / 2, h) : gfx_rect(x + wi / 2, y, wi / 2, h);
+  ) : (
+    gfx_rect(x, y, max(1, v / 127 * wi), h);
+  );
+  lockm[i] ? (col(LR, LG, LB, 1); gfx_rect(x, y, max(2, S(3)), h););
+  hot > 0 ? (
+    col(AR, AG, AB, 0.10 * hot); frame(x - 3, y - 3, wi + 6, h + 6);
+    col(AR, AG, AB, 0.25 * hot); frame(x - 2, y - 2, wi + 4, h + 4);
+    col(AR, AG, AB, hot); frame(x - 1, y - 1, wi + 2, h + 2);
+  ) : (
+    col(0.17, 0.18, 0.2, 1); frame(x - 1, y - 1, wi + 2, h + 2);
+  );
+  h >= 11 ? (
+    gfx_setfont(5, "Consolas", min(S(14), h));
+    fmtval(i, v, 20);
+    gfx_measurestr(20, tw, th);
+    i == 133 ? col(0.05, 0.055, 0.06, 1) : col(0.95, 0.95, 0.96, 0.95);
+    // WG Model switch: name centred in the lit half (TUBE left, STRING right), dark text on the light half
+    i == 133 ? txt(20, (v < 64 ? x : x + wi / 2) + (wi / 2 - tw) / 2, y + (h - th) / 2)
+             : txt(20, x + wi - tw - S(3), y + (h - th) / 2);
+  );
+);
+
+now = time_precise();
+AR = 0.91; AG = 0.21; AB = 0.17;   // warning red #e8362b
+MG = S(10);
+SBW = S(140);
+gfx_gradrect(0, 0, gfx_w, gfx_h, 0.141, 0.153, 0.169, 1, 0, 0, 0, 0, -0.039 / gfx_h, -0.043 / gfx_h, -0.047 / gfx_h, 0);
+screw(S(6), S(6)); screw(gfx_w - S(6), S(6)); screw(S(6), gfx_h - S(6)); screw(gfx_w - S(6), gfx_h - S(6));
+
+
+// ---- readout ----
+READH = S(62);
+RW = gfx_w - 3 * MG - SBW;
+col(0.043, 0.047, 0.051, 1); gfx_rect(MG, MG, RW, READH);
+col(0, 0, 0, 0.55); gfx_rect(MG, MG, RW, S(3));
+col(0.2, 0.216, 0.235, 1); frame(MG, MG, RW, READH);
+fresh = max(0, 1 - (now - lastchg_t) / 4);
+gfx_setfont(2, "Consolas", S(28));
+RX = MG + S(16); RY = MG + (READH - S(28)) / 2;
+lastchg > 0 ? (
+  lastchg <= 132 ? (
+    p = floor((lastchg - 1) / 22) + 1;
+    k = layer(lastchg);
+    k > 0 ? sprintf(30, "PART %d · LAYER %d · %s", p, k, longname((lastchg - 1) % 22 - (k - 1) * 7))
+          : sprintf(30, "PART %d · %s", p, plong(pm(lastchg)));
+  ) : sprintf(30, "WAVEGUIDE · %s", wlong(lastchg - 133));
+  tlen > 0 && tparam == lastchg ? sprintf(31, "TYPE %d_", tval) : (issel(lastchg) ? sellong(clampv(slider(lastchg)), 31) : fmtval(lastchg, clampv(slider(lastchg)), 31));
+  // fixed sizes (no jumping): Select combinations smaller so the longest fits
+  gfx_setfont(6, "Consolas", issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? S(24) : S(38));
+  gfx_measurestr(31, vw, vh);
+  issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? (
+    // Select: three fixed, left-aligned columns (SRC 8 chars · MOD 9 · EG 5), nothing moves
+    gfx_measurestr("M", cw, vh);
+    vw = 28 * cw; sx = MG + RW - vw - S(16); sy = MG + (READH - vh) / 2;
+    sn = floor(clampv(slider(lastchg)) * 45 / 128);
+    glowtxt(selsrcl(floor(sn / 9)), sx, sy, fresh);
+    glowtxt("·", sx + 9 * cw, sy, fresh);
+    glowtxt(selmod(floor(sn / 3) % 3), sx + 11 * cw, sy, fresh);
+    glowtxt("·", sx + 21 * cw, sy, fresh);
+    glowtxt(seleg(sn % 3), sx + 23 * cw, sy, fresh);
+  ) : (
+    glowtxt(31, MG + RW - vw - S(16), MG + (READH - vh) / 2, fresh);
+  );
+  gfx_setfont(2, "Consolas", S(24)); gfx_measurestr(30, tw, th);
+  glowtxt(30, RX, MG + (READH - th) / 2, fresh);
+) : lastchg < 0 ? (
+  lastchg == -3 ? strcpy(30, #rm) : sprintf(30, "PRESET LOADED · %d PARAMS", lastn);
+  glowtxt(30, RX, RY, fresh);
+) : (
+  col(AR, AG, AB, 0.35); txt("VOLCA DRUM", RX, RY);
+);
+
+// ---- send all button ----
+sbx = gfx_w - MG - SBW; sby = MG; sbw = SBW; sbh = READH - S(26);
+flash = max(0, 1 - (now - sendall_t) / 1.5);
+gfx_gradrect(sbx, sby, sbw, sbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / sbh, -0.059 / sbh, -0.063 / sbh, 0);
+flash > 0 ? (col(AR, AG, AB, 0.55 * flash); gfx_rect(sbx, sby, sbw, sbh););
+col(0.267, 0.286, 0.31, 1); frame(sbx, sby, sbw, sbh);
+gfx_setfont(4, "Bahnschrift", S(16), 'b');
+col(0.9, 0.91, 0.92, 1); ctxt(flash > 0 ? "SENT" : "SEND ALL", sbx, sby + (sbh - S(16)) / 2 - 1, sbw);
+// SOUND: menu with copy / paste part
+ssy = sby + sbh + S(4); ssw = SBW; ssh = READH - sbh - S(4);
+gfx_setfont(3, "Bahnschrift", S(11), 'b');
+gfx_gradrect(sbx, ssy, ssw, ssh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / ssh, -0.059 / ssh, -0.063 / ssh, 0);
+col(0.267, 0.286, 0.31, 1); frame(sbx, ssy, ssw, ssh);
+col(0.9, 0.91, 0.92, 1); ctxt("SOUND", sbx, ssy + (ssh - S(11)) / 2 - 1, ssw);
+// SOUND menu (opened by the mouse code at the end of the last frame)
+function sound_menu(x, y) local(sel) (
+  fp == 6 ? strcpy(#mn, "#CLICK A PART FIRST") : (
+    sprintf(#mn, "COPY PART %d|", fp + 1);
+    cb_ok ? sprintf(#t2, "PASTE PART %d > PART %d", cb_from + 1, fp + 1) : strcpy(#t2, "#PASTE (COPY A PART FIRST)");
+    strcat(#mn, #t2);
+  );
+  gfx_x = x; gfx_y = y;
+  sel = gfx_showmenu(#mn);
+  fp != 6 ? (sel == 1 ? copypart() : sel == 2 ? pastepart(););
+);
+open_menu == 1 ? sound_menu(sbx, ssy + ssh) : open_menu == 3 ? sound_menu(mouse_x, mouse_y);
+open_menu = 0;
+
+// ---- focus: the last touched part (or waveguide) lifts out of the rack ----
+// lp = focused part 0-5, 6 = waveguide; stays until another one is touched
+lastchg > 0 ? (fp = lastchg <= 132 ? floor((lastchg - 1) / 22) : 6;);
+fp != prevfp ? (prevfp = fp; fp_t = now;);
+lift = S(4) * min(1, (now - fp_t) / 0.12);
+function drawfocus(x, y, w, h, l) (
+  col(0, 0, 0, 0.35); gfx_rect(x + S(2), y + l + S(3), w, h);          // shadow
+  col(0, 0, 0, 0.2);  gfx_rect(x + S(4), y + l + S(6), w, h);
+  col(AR, AG, AB, 0.10); frame(x - 3, y - 3, w + 6, h + 6);             // glow
+  col(AR, AG, AB, 0.28); frame(x - 2, y - 2, w + 4, h + 4);
+  col(0.155, 0.165, 0.18, 1); gfx_rect(x, y, w, h);                     // lighter panel
+  col(AR, AG, AB, 0.9); frame(x - 1, y - 1, w + 2, h + 2);
+  col(AR, AG, AB, 1); gfx_rect(x, y, w, S(3));
+);
+
+// ---- parts ----
+WGW = S(146);
+GAP = S(8);
+y0 = MG + READH + MG;
+AREAW = gfx_w - WGW - 3 * MG;
+colw = floor((AREAW - 5 * GAP) / 6);
+AREAH = gfx_h - y0 - MG;
+HD1 = S(24); HD2 = S(16); SEP = S(12); PAD = S(6);
+rh = max(10, floor((AREAH - HD1 - HD2 - SEP - PAD) / 15));
+lw = S(34);
+bw2 = floor((colw - lw - 3 * PAD) / 2);
+LF = S(11);
+lp = fp;
+// row name = lock button for randomize (that row in this part, both layers). All cells locked: red chip
+function rowlab(nm, x, y, q, tint) (
+  labx[nl] = x - S(2); laby[nl] = y; labq[nl] = p * 32 + q; nl += 1;
+  gfx_setfont(3, "Bahnschrift", LF, 'b');
+  rowlocked(p, q) ? (
+    col(LR, LG, LB, 0.22); gfx_rect(x - S(2), y + 2, lw - S(1), rh - 4);
+    col(LR, LG, LB, 1);
+  ) : tint ? col(0.73, 0.64, 0.84, 1) : col(0.6, 0.63, 0.65, 1);   // vdcf params tinted
+  txt(nm, x, y + (rh - LF) / 2);
+);
+nl = 0;
+p = 0;
+loop(6,
+  cx = MG + p * (colw + GAP);
+  act = p == lp;
+  cy = act ? y0 - lift : y0;
+  act ? drawfocus(cx, cy, colw, AREAH, lift) : (
+    col(0.118, 0.125, 0.137, 1); gfx_rect(cx, cy, colw, AREAH);
+    col(0.184, 0.2, 0.216, 1); frame(cx, cy, colw, AREAH);
+    col(0.227, 0.243, 0.263, 1); gfx_rect(cx, cy, colw, S(2));
+  );
+  // title = part lock button (amber title + top edge when locked)
+  ptx[p] = cx; pty[p] = cy; ptw[p] = colw - S(36) - PAD; pth = HD1;
+  plock[p] ? (col(LR, LG, LB, 1); gfx_rect(cx, cy, colw, S(3)););
+  gfx_setfont(4, "Bahnschrift", S(17), 'b');
+  plock[p] ? col(LR, LG, LB, 1) : act ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
+  sprintf(32, "PART 0%d", p + 1); txt(32, cx + PAD + S(1), cy + S(6));
+  // LINK button
+  lkw = S(36); lkh = S(16); lkx[p] = cx + colw - PAD - lkw; lky[p] = cy + S(7); lkW = lkw; lkH = lkh;
+  slider(138 + p) >= 0.5 ? (
+    col(AR, AG, AB, 0.85); gfx_rect(lkx[p], lky[p], lkw, lkh);
+    col(1, 1, 1, 1);
+  ) : (
+    col(0.071, 0.075, 0.082, 1); gfx_rect(lkx[p], lky[p], lkw, lkh);
+    col(0.27, 0.29, 0.31, 1); frame(lkx[p], lky[p], lkw, lkh);
+    col(0.55, 0.58, 0.6, 1);
+  );
+  gfx_setfont(3, "Bahnschrift", S(10), 'b'); ctxt("LINK", lkx[p], lky[p] + (lkh - S(10)) / 2 - 1, lkw);
+  gfx_setfont(3, "Bahnschrift", LF, 'b');
+  col(AR, AG, AB, 1); ctxt("L1", cx + lw + PAD, cy + HD1 + S(2), bw2);
+  col(0.62, 0.70, 0.77, 1); ctxt("L2", cx + lw + 2 * PAD + bw2, cy + HD1 + S(2), bw2);
+  ry = cy + HD1 + HD2;
+  r = 0;
+  loop(7,
+    k = lord(r);
+    rowlab(shortname(k), cx + PAD, ry, k, 0);
+    drawbar(p * 22 + 1 + k, cx + lw + PAD, ry + 2, bw2, rh - 4, 1);
+    drawbar(p * 22 + 8 + k, cx + lw + 2 * PAD + bw2, ry + 2, bw2, rh - 4, 2);
+    ry += rh; r += 1;
+  );
+  col(0.2, 0.216, 0.235, 1); gfx_rect(cx + PAD, ry + SEP / 2, colw - 2 * PAD, 1);
+  ry += SEP;
+  r = 0;
+  loop(8,
+    mi = mord(r);
+    rowlab(pshort(mi), cx + PAD, ry, 7 + mi, mi >= 6);
+    drawbar(p * 22 + 15 + mi, cx + lw + PAD, ry + 2, colw - lw - 2 * PAD, rh - 4, 3);
+    ry += rh; r += 1;
+  );
+  p += 1;
+);
+
+// ---- waveguide ----
+wx = gfx_w - MG - WGW;
+wact = fp == 6;
+wy = wact ? y0 - lift : y0;
+wact ? drawfocus(wx, wy, WGW, AREAH, lift) : (
+  col(0.118, 0.125, 0.137, 1); gfx_rect(wx, wy, WGW, AREAH);
+  col(0.184, 0.2, 0.216, 1); frame(wx, wy, WGW, AREAH);
+  col(0.227, 0.243, 0.263, 1); gfx_rect(wx, wy, WGW, S(2));
+);
+ptx[6] = wx; pty[6] = wy; ptw[6] = WGW;
+plock[6] ? (col(LR, LG, LB, 1); gfx_rect(wx, wy, WGW, S(3)););
+gfx_setfont(4, "Bahnschrift", S(15), 'b');
+plock[6] ? col(LR, LG, LB, 1) : wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
+txt("WAVEGUIDE", wx + S(9), wy + S(8));
+ry = wy + S(38);
+wi = 0;
+loop(4,
+  gfx_setfont(3, "Bahnschrift", LF, 'b'); col(0.6, 0.63, 0.65, 1); txt(wlong(wi), wx + S(9), ry);
+  drawbar(133 + wi, wx + S(9), ry + S(15), WGW - S(18), S(20), 4);
+  ry += S(48); wi += 1;
+);
+// ---- random ----
+rdx = wx + S(9); rwd = WGW - S(18);
+ry0 = wy + S(242);
+col(0.2, 0.216, 0.235, 1); gfx_rect(rdx, ry0 - S(10), rwd, 1);
+gfx_setfont(4, "Bahnschrift", S(15), 'b');
+wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
+txt("RANDOM", rdx, ry0);
+sgw = floor((rwd - S(4)) / 2); sgh = S(20);
+q = 0;
+loop(4,
+  sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(24) + floor(q / 2) * (sgh + S(4));
+  floor(slider(145) + 0.5) == q ? (
+    col(AR, AG, AB, 0.85); gfx_rect(sgx[q], sgy[q], sgw, sgh); col(1, 1, 1, 1);
+  ) : (
+    col(0.071, 0.075, 0.082, 1); gfx_rect(sgx[q], sgy[q], sgw, sgh);
+    col(0.27, 0.29, 0.31, 1); frame(sgx[q], sgy[q], sgw, sgh); col(0.6, 0.63, 0.65, 1);
+  );
+  gfx_setfont(3, "Bahnschrift", S(11), 'b');
+  ctxt(q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", sgx[q], sgy[q] + (sgh - S(11)) / 2 - 1, sgw);
+  q += 1;
+);
+gfx_setfont(3, "Bahnschrift", LF, 'b'); col(0.6, 0.63, 0.65, 1); txt("AMOUNT", rdx, ry0 + S(74));
+amx = rdx; amy = ry0 + S(89); amw = rwd; amh = S(20);
+col(0.071, 0.075, 0.082, 1); gfx_rect(amx, amy, amw, amh);
+col(AR, AG, AB, 0.72); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
+col(0.17, 0.18, 0.2, 1); frame(amx - 1, amy - 1, amw + 2, amh + 2);
+gfx_setfont(5, "Consolas", S(14)); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th);
+col(0.95, 0.95, 0.96, 0.95); txt(20, amx + amw - tw - S(3), amy + (amh - th) / 2);
+// ROLL + UNDO buttons
+rbx = rdx; rby = ry0 + S(119); rbw = sgw; rbh = S(32); ubx = rdx + sgw + S(4);
+rflash = max(0, 1 - (now - roll_t) / 1.0);
+gfx_gradrect(rbx, rby, rbw, rbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / rbh, -0.059 / rbh, -0.063 / rbh, 0);
+rflash > 0 ? (col(AR, AG, AB, 0.55 * rflash); gfx_rect(rbx, rby, rbw, rbh););
+col(0.267, 0.286, 0.31, 1); frame(rbx, rby, rbw, rbh);
+gfx_gradrect(ubx, rby, rbw, rbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / rbh, -0.059 / rbh, -0.063 / rbh, 0);
+col(0.267, 0.286, 0.31, 1); frame(ubx, rby, rbw, rbh);
+gfx_setfont(4, "Bahnschrift", S(15), 'b');
+col(0.9, 0.91, 0.92, 1); ctxt("ROLL", rbx, rby + (rbh - S(15)) / 2 - 1, rbw);
+undo_ok ? col(0.9, 0.91, 0.92, 1) : col(0.4, 0.42, 0.45, 1);
+ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - S(15)) / 2 - 1, rbw);
+
+// ---- morph (help texts moved to the vault note "Volca Drum - Panel Setup") ----
+mo0 = ry0 + S(164);
+col(0.2, 0.216, 0.235, 1); gfx_rect(rdx, mo0 - S(10), rwd, 1);
+gfx_setfont(4, "Bahnschrift", S(15), 'b');
+wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
+txt("MORPH", rdx, mo0);
+mbh = S(22); mby_a = mo0 + S(22); mby_b = mby_a + mbh + S(4);
+mm = slider(148) / 100;
+q = 0;
+loop(2,
+  yy = q ? mby_b : mby_a;
+  col(0.071, 0.075, 0.082, 1); gfx_rect(rdx, yy, rwd, mbh);
+  col(0.27, 0.29, 0.31, 1); frame(rdx, yy, rwd, mbh);
+  (q ? mb_ok : ma_ok) ? (col(AR, AG, AB, q ? mm : 1 - mm); gfx_rect(rdx, yy, max(2, S(3)), mbh););   // which end is closer
+  gfx_setfont(3, "Bahnschrift", S(11), 'b');
+  q ? (mb_ok ? (sprintf(33, "B · %s", #nb); col(0.9, 0.91, 0.92, 1);) : (strcpy(33, "SET B"); col(0.6, 0.63, 0.65, 1);))
+    : (ma_ok ? (sprintf(33, "A · %s", #na); col(0.9, 0.91, 0.92, 1);) : (strcpy(33, "SET A"); col(0.6, 0.63, 0.65, 1);));
+  txt(33, rdx + S(9), yy + (mbh - S(11)) / 2 - 1);
+  q += 1;
+);
+mox = rdx; moy = mby_b + mbh + S(6); mow = rwd; moh = S(20);
+col(0.071, 0.075, 0.082, 1); gfx_rect(mox, moy, mow, moh);
+col(AR, AG, AB, 0.72); gfx_rect(mox, moy, max(1, mm * mow), moh);
+col(0.17, 0.18, 0.2, 1); frame(mox - 1, moy - 1, mow + 2, moh + 2);
+gfx_setfont(5, "Consolas", S(14)); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
+col(0.95, 0.95, 0.96, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
+
+gfx_setfont(4, "Bahnschrift", S(12), 'b');
+col(0.365, 0.384, 0.412, 1); txt("NH4X · VOLCA DRUM", wx + S(9), gfx_h - MG - S(16));
+
+// ---- mouse ----
+function hit(x, y) local(i, r) (
+  r = 0; i = 1;
+  loop(NS,
+    !r && x >= bx[i] && x < bx[i] + bw[i] && y >= by[i] && y < by[i] + bh[i] ? r = i;
+    i += 1;
+  );
+  r;
+);
+
+function inr(x, y, w, h) ( mouse_x >= x && mouse_x < x + w && mouse_y >= y && mouse_y < y + h );
+function setamt(v) ( slider(144) = max(0, min(100, floor(v + 0.5))); slider_automate(slider(144)); );
+function setmorph(v) (
+  v = max(0, min(100, floor(v + 0.5)));
+  v != slider(148) ? (slider(148) = v; slider_automate(slider(148)); last_morph = v; domorph(););
+);
+
+mouse_cap & 1 ? (
+  !mdown ? (
+    mdown = 1;
+    lhit = -1; q = 0;
+    loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lkW && mouse_y >= lky[q] && mouse_y < lky[q] + lkH ? lhit = q; q += 1;);
+    lq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? lq = labq[q]; q += 1;);
+    sq = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? sq = q; q += 1;);
+    ah_i = mouse_cap & 8 ? hit(mouse_x, mouse_y) : 0;   // Shift+click on a bar = lock/unlock that cell
+    tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pth) ? tq = q; q += 1;);
+    // part title: click = select that part (focus), Shift+click = part lock; right-click = SOUND menu (below)
+    tq >= 0 && ah_i == 0 ? (
+      mouse_cap & 8 ? (plock[tq] = !plock[tq]; slider_automate(slider(144));) : (
+        fp = tq;
+        tq == 6 ? strcpy(#rm, "WAVEGUIDE") : sprintf(#rm, "PART %d", tq + 1); msg();
+      );
+      drag = 0;
+    ) : ah_i > 0 ? (
+      lockm[ah_i] = !lockm[ah_i]; slider_automate(slider(144)); drag = 0;
+    ) : lhit >= 0 ? (
+      slider(138 + lhit) = slider(138 + lhit) >= 0.5 ? 0 : 1; slider_automate(slider(138 + lhit)); drag = 0;
+    ) : mouse_x >= sbx && mouse_x < sbx + sbw && mouse_y >= sby && mouse_y < sby + sbh ? (
+      sendall(); drag = 0;
+    ) : inr(sbx, ssy, ssw, ssh) ? (
+      open_menu = 1; drag = 0;
+    ) : lq >= 0 ? (
+      togglerow(floor(lq / 32), lq % 32); slider_automate(slider(144)); drag = 0;   // automate = project gets "changed"
+    ) : sq >= 0 ? (
+      slider(145) = sq; slider_automate(slider(145)); drag = 0;
+    ) : inr(amx, amy, amw, amh) ? (
+      drag = -10;
+    ) : inr(rbx, rby, rbw, rbh) ? (
+      doroll(); drag = 0;
+    ) : inr(ubx, rby, rbw, rbh) ? (
+      doundo(); drag = 0;
+    ) : inr(rdx, mby_a, rwd, mbh) ? (
+      setab(0); drag = 0;
+    ) : inr(rdx, mby_b, rwd, mbh) ? (
+      setab(1); drag = 0;
+    ) : inr(mox, moy, mow, moh) ? (
+      drag = -11;
+    ) : (
+      drag = hit(mouse_x, mouse_y);
+      // double-click on the same bar = default value
+      drag > 0 && drag == lastclick_i && now - lastclick_t < 0.35 ? (
+        setparam(drag, dflt[drag]);
+        lastclick_t = -1; drag = 0;
+      ) : (
+        lastclick_i = drag; lastclick_t = now;
+      );
+    );
+  );
+  drag > 0 ? (
+    drag == 133 ? setparam(drag, mouse_x < bx[drag] + bw[drag] / 2 ? 0 : 127)
+                : setparam(drag, (mouse_x - bx[drag]) / bw[drag] * 127);
+  ) : drag == -10 ? (
+    setamt((mouse_x - amx) / amw * 100);
+  ) : drag == -11 ? (
+    setmorph((mouse_x - mox) / mow * 100);
+  );
+) : (
+  mdown = 0; drag = 0;
+);
+
+// right-click on a bar = lock/unlock that cell; on a row name = that row in all 6 parts;
+// on a part title = select that part + SOUND menu at the mouse
+mouse_cap & 2 ? (
+  !rdown ? (
+    rdown = 1;
+    rh_i = hit(mouse_x, mouse_y);
+    rq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? rq = labq[q]; q += 1;);
+    rt = -1; q = 0; loop(6, inr(ptx[q], pty[q], ptw[q], pth) ? rt = q; q += 1;);
+    rh_i > 0 ? (lockm[rh_i] = !lockm[rh_i]; slider_automate(slider(144));) :
+    rq >= 0 ? (togglerowall(rq % 32); slider_automate(slider(144));) :
+    rt >= 0 ? (
+      fp = rt; sprintf(#rm, "PART %d", fp + 1); msg(); open_menu = 3;
+    );
+  );
+) : (rdown = 0;);
+
+mouse_wheel != 0 ? (
+  hv = hit(mouse_x, mouse_y);
+  hv > 0 ? setparam(hv, slider(hv) + (mouse_wheel > 0 ? 1 : -1)) :
+  inr(amx, amy, amw, amh) ? setamt(slider(144) + (mouse_wheel > 0 ? 5 : -5)) :
+  inr(mox, moy, mow, moh) ? setmorph(slider(148) + (mouse_wheel > 0 ? 5 : -5));
+  mouse_wheel = 0;
+);
+
+// ---- typed entry: hover a bar, type digits, Enter = set, Esc = cancel, Backspace = delete ----
+c = gfx_getchar();
+while (c > 0) (
+  c >= 48 && c <= 57 ? (
+    tlen == 0 ? (
+      tparam = hit(mouse_x, mouse_y);
+      tparam == 0 ? tparam = lastchg;
+      tval = 0;
+    );
+    tparam > 0 && tlen < 3 ? (
+      tval = tval * 10 + (c - 48); tlen += 1;
+      lastchg = tparam; lastchg_t = now;
+    );
+  ) : c == 13 ? (
+    tlen > 0 && tparam > 0 ? (lastchg = 0; setparam(tparam, tval); markchange(tparam););
+    tlen = 0;
+  ) : c == 27 ? (
+    tlen = 0;
+  ) : c == 8 ? (
+    tlen > 0 ? (tval = floor(tval / 10); tlen -= 1;);
+  );
+  c = gfx_getchar();
+);
