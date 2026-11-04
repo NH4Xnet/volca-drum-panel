@@ -4,6 +4,8 @@ A free editor for the **Korg volca drum** inside REAPER, as one JSFX file. All p
 
 By NH4X. Version 1.0. Music: https://nh4x.bandcamp.com/
 
+![Volca Drum Panel in REAPER](screenshot.png)
+
 ## What it does
 - **Every parameter on one screen:** 6 parts (both layers + mix) and the waveguide. Drag, mouse wheel, double-click for default, or hover and type a number.
 - **Readable values:** Select shows source, modulation and envelope by name; pan, filter, clip and model show what they mean.
