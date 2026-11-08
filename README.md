@@ -4,7 +4,9 @@ A free editor for the **Korg volca drum** inside REAPER, as one JSFX file. All p
 
 By NH4X. Version 1.5. Music: https://nh4x.bandcamp.com/
 
-![Volca Drum Panel in REAPER](VolcaDrumPanel.gif)
+![Volca Drum Panel in REAPER](screenshot.png)
+
+**New in 1.5:** Select split into three rows (SRC / MOD.T / EG.T), two looks + 14 color themes, test hit and pitch quantize per part, and installation + updates via **ReaPack**. A step sequencer for the volca drum is coming to the same repository.
 
 **New here? Go straight to [Setup](#setup-do-this-once-5-minutes). It takes 5 minutes, and step 2 is the one people miss.**
 
@@ -87,6 +89,14 @@ Locks and morph snapshots are saved with the project, not in presets.
 - Pitch quantize (QPI) is CC 53, found in the Synthmata volca drum editor.
 - The Sleeve look uses the free font **Big Shoulders Display** (Google Fonts) if it's installed; otherwise Bahnschrift Condensed.
 - For MIDI controllers: Roll (slider 146) and Undo (147) act as buttons (send 1), Morph = slider 148.
+
+## Other DAWs (Ableton, Cubase, Bitwig, FL Studio …)
+Not tested by me, but it should work: **ysfx** is a free, open-source plugin that loads JSFX files in other DAWs (VST3 / AU / CLAP).
+1. Download ysfx for your system: https://github.com/JoepVanlier/ysfx/releases
+2. Put it in your VST3, AU or CLAP plugin folder.
+3. In your DAW, load "ysfx FX" on a MIDI track and open `Volca Drum Panel.jsfx` in it. The sliders show up as normal plugin parameters, so automation works too.
+- Windows: if it crashes, install the latest Microsoft Visual C++ Redistributable.
+- Mac: ysfx isn't signed; the unblock command is in the README on the ysfx GitHub page.
 
 ## Coming with the Volca Drum Sequencer
 A step sequencer for the volca drum is on its way, in this same ReaPack repository. With it, more parts of the panel come alive: sound files (save / load / rename / delete a part from the SOUND menu), kit scripts (save, next, previous, kit names in the display and in MORPH), a kit per sequencer pattern, p-locks, and **Q** following the sequencer's pitch lanes. Until then these parts simply stay quiet.
