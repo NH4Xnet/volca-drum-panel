@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<index version="1" name="NH4X Volca">
+  <category name="Volca Drum">
+    <reapack name="Volca Drum Panel.jsfx" type="effect" desc="Volca Drum Panel (Korg volca drum editor)">
+      <metadata>
+        <link rel="website" href="https://github.com/NH4Xnet/volca-drum-panel">GitHub / manual</link>
+        <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>
+      </metadata>
+      <version name="1.5" author="NH4X" time="2026-11-08T13:00:00Z">
+        <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5/Volca%20Drum%20Panel.jsfx</source>
+        <changelog><![CDATA[Select split into SRC / MOD.T / EG.T rows.
+Two looks (Classic / Sleeve) + 14 color themes.
+Test hit and Q (pitch quantize, CC 53) per part.
+Tooltips. Notes on channel 11-16 play parts melodically.
+FILT locked for ROLL by default.]]></changelog>
+      </version>
+    </reapack>
+  </category>
+</index>

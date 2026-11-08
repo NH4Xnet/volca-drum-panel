@@ -1,10 +1,10 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 1.0.1 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 1.5 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
-//  1. Put this file into REAPER's Effects folder (Options > Show REAPER resource path > Effects), then
-//     add "JS: Volca Drum Panel" to a track.
+//  1. Install via ReaPack, or put this file into REAPER's Effects folder (Options > Show REAPER resource path > Effects),
+//     then add "JS: Volca Drum Panel" to a track.
 //  2. Track: MIDI hardware output = the port your volca drum is connected to.
 //  3. Volca: split channel mode (part 1-6 = MIDI channel 1-6, see the Korg manual). Waveguide CCs go out on channel 1.
 //  4. FILT and CLIP (purple row names) need the custom firmware "vdcf" by hj-oja (CC 54/55);
@@ -12,11 +12,14 @@ desc:Volca Drum Panel
 //
 // USE
 //  - Drag or mouse wheel = change, double-click = default, hover + type 0-127 + Enter = exact value.
-//    SEL (Select) drags slowly and relatively; one wheel notch = one combination.
+//    Rest the mouse 1 s on a button = what it does (in the display).
+//  - SELECT is shown as three rows: SRC (source), MOD.T (modulation type), EG.T (envelope type).
+//    Each row changes only its own part (click a segment, drag or wheel). Still one Select CC underneath.
 //  - The volca has no MIDI out: the panel only knows what it sent. SEND ALL pushes the whole kit
 //    (nothing is sent when a project loads).
 //  - Kits = REAPER presets of this plugin (preset menu at the top of the FX window). Loading one sends the changes.
 //  - Click a part title = select that part. LINK = changes on one layer go to the other layer too.
+//    Play button = one test hit on that part. Q = pitch quantize (QPI, CC 53) for that part.
 //  - SOUND (or right-click a part title): copy a part, paste it into another part (also across kits).
 //  - RANDOM: target (part / layer / kit), amount, ROLL, UNDO (also undoes a paste; press again = redo).
 //    Locks (amber) are skipped by every roll: right-click (or Shift+click) a bar = one cell,
@@ -24,15 +27,23 @@ desc:Volca Drum Panel
 //    Shift+click a part title = whole part. Locks are saved with the project, not in presets.
 //  - MORPH: SET A, SET B (snapshots of the whole kit, saved with the project), then move the bar.
 //    Select and WG Model switch at 50 %. Locked cells don't move. Tip: set A and B from two saved kits.
+//  - LOOK (small square, top left) = Classic / Sleeve. COLOR (swatch next to it) = 14 color themes (click or wheel).
+//    Sleeve uses the free font "Big Shoulders Display" if installed (Google Fonts), otherwise Bahnschrift Condensed.
 //  - Note routing: notes 65/67/69/71/72/74 on any channel go out on channel 1-6 (= part 1-6),
-//    so one piano roll on one channel plays all parts. All other MIDI passes through.
+//    so one piano roll on one channel plays all parts. Notes on channel 11-16 go to part 1-6 unchanged
+//    (play a part melodically, best with Q on). All other MIDI passes through.
 //  - All parameters are plugin parameters: automation and MIDI controllers (e.g. ReaLearn) work.
 //    Sliders 146 Roll / 147 Undo act as buttons (1 = fire), 148 = Morph.
 //
-// CC numbers: Korg "volca drum MIDI Implementation Chart (Split channel)" 2019.2.20 + vdcf README (54 FLT, 55 CLP).
-// Pitch quantize has no CC (front panel only). Fonts: Bahnschrift + Consolas (Windows).
+// COMING WITH THE VOLCA DRUM SEQUENCER RELEASE (same ReaPack repository):
+//  sound files (SAVE / LOAD / RENAME / DELETE a part in the SOUND menu), kit scripts (save / next / previous kit,
+//  kit names in the display and in MORPH), kit per sequencer pattern, p-locks from the sequencer, Q following the
+//  sequencer's pitch lanes. Until then these parts of the panel simply stay quiet.
+//
+// CC numbers: Korg "volca drum MIDI Implementation Chart (Split channel)" 2019.2.20 + vdcf README (54 FLT, 55 CLP),
+// QPI CC 53 from the Synthmata volca drum editor. Fonts: Bahnschrift + Consolas (Windows).
 
-options:no_meter
+options:no_meter gmem=NH4XVolca
 in_pin:none
 out_pin:none
 
@@ -179,18 +190,31 @@ slider140:0<0,1,1{off,on}>-P3 Link L1+L2
 slider141:0<0,1,1{off,on}>-P4 Link L1+L2
 slider142:0<0,1,1{off,on}>-P5 Link L1+L2
 slider143:0<0,1,1{off,on}>-P6 Link L1+L2
-// Randomize. Cell locks + morph snapshots are saved with the project (@serialize)
+// Randomize (not stored in kits: the kit script saves sliders 1-143 only). Cell locks: @serialize (project)
 slider144:50<0,100,1>-Rnd Amount %
 slider145:0<0,3,1{Part,Layer 1,Layer 2,Kit}>-Rnd Target
 slider146:0<0,1,1>-Rnd Roll (button: 1 = roll, resets to 0)
 slider147:0<0,1,1>-Rnd Undo (button: 1 = undo/redo, resets to 0)
 slider148:0<0,100,1>-Morph A>B %
+slider149:0<0,13,1{Classic red,Sleeve red,Hazard,Cold steel,Amber CRT,Field olive,Concrete,Xerox,Plant light,Blueprint,Night vision,Oxblood,Rust,Plant grey}>-Color
+slider150:0<0,1,1{Classic,Sleeve}>-Look
+slider151:0<0,1,1{off,on}>-P1 QPI (CC 53)
+slider152:0<0,1,1{off,on}>-P2 QPI (CC 53)
+slider153:0<0,1,1{off,on}>-P3 QPI (CC 53)
+slider154:0<0,1,1{off,on}>-P4 QPI (CC 53)
+slider155:0<0,1,1{off,on}>-P5 QPI (CC 53)
+slider156:0<0,1,1{off,on}>-P6 QPI (CC 53)
 
 @init
 ext_noinit = 1;
+gfx_ext_retina = 1;   // sharp canvas on HiDPI screens (layout scales from gfx_w / gfx_h)
 NS = 136;          // sound parameters; slider 137 = Send all
 SA_IDX = 137;
 MAXSEND = 8;       // CCs per block, keeps a full kit dump from flooding the 31.25k MIDI line
+// QPI per part (v1.4, 2026-11-06): sliders 151-156, CC 53 on the part's channel, 127 = on (found in the Synthmata editor, tested)
+// v1.5: moved from 3100-3145 (sat on rlo/rhi/rbs = the random ranges; ROLL lost its drum-friendly limits)
+qlast = 7000; qdirty = 7010; qx = 7020; qy = 7030;
+seqq = 7040; i = 0; loop(6, seqq[i] = -1; i += 1;);   // QPI link: last PIT state seen from the sequencer (gmem 1700-1705, 1710 = present)
 
 last = 0;          // [1..136] last sent value
 dirty = 200;       // [1..136] waiting to be sent
@@ -225,18 +249,28 @@ lastclick_t = -1; lastclick_i = 0;
 nmap = 2200; i = 0; loop(128, nmap[i] = -1; i += 1;);
 nmap[65] = 0; nmap[67] = 1; nmap[69] = 2; nmap[71] = 3; nmap[72] = 4; nmap[74] = 5;
 
+kitrx = gmem[2600];   // v1.4.7 kit per pattern from the sequencer: [2600] counter, [2601..2736] slider 1-136, [2737] pattern
+kitcnt = gmem[0];  // kit messages from the scripts "Volca kit (...)": [0] counter, [1] type, [2] len, [3..] name
 sync_pending = 1;  // first @block takes over the loaded values without sending
-lastchg = 0;       // >0 slider index, -1 = many at once (preset), -3 = message in #rm
+lastchg = 0;       // >0 slider index, -1 = many at once (kit/preset), -2 = kit message from a script
 nchg = 0;
 lastchg_t = 0;
+gte = 1; r1t = -10; r1c = -10; plc = -99; plt = 0;   // v1.4.8 readout fade (@init, not per frame)
 sendall_t = -100;
 drag = 0;
 mdown = 0;
 fp = 0;            // focused part 0-5, 6 = waveguide
+gmem[200] = 0;
+// ▶ per part (2026-11-05): aud = request from @gfx, audoff = samples until note-off, anote = the part's drum note
+aud = 4200; audoff = 4210; anote = 4220; plx = 4230; ply = 4240; pthh = 4250; audt = 4260;
+anote[0] = 65; anote[1] = 67; anote[2] = 69; anote[3] = 71; anote[4] = 72; anote[5] = 74;
 
 // ---- randomize ----
-// memory: ub 2400 (undo buffer), labx/laby/labq 2600/2700/2800 (lock label hits), sgx/sgy 3000/3010, rlo/rhi/rbs 3100/3120/3140, lockm 3200
-ub = 2400; labx = 2600; laby = 2700; labq = 2800; sgx = 3000; sgy = 3010;
+// memory: ub 2400 (undo buffer), sgx/sgy 3000/3010, rlo/rhi/rbs 3100/3120/3140, lockm 3200, themes 5000-6385, TINTA 6600,
+//   QPI 7000-7045, labx/laby/labq 7100/7300/7500 (lock label hits, 102 rows), split Select cells vsi..vsh 7700-8235
+ub = 2400; labx = 7100; laby = 7300; labq = 7500; sgx = 3000; sgy = 3010;
+vsi = 7700; vsc = 7800; vsx = 7900; vsy = 8000; vsw = 8100; vsh = 8200; nv = 0;
+lastcomp = -1;     // split Select: component last changed by mouse (0 SRC, 1 MOD.T, 2 EG.T), -1 = whole value
 rlo = 3100; rhi = 3120; rbs = 3140;
 // random range per row q (0-6 layer SEL LVL ATT REL PIT MOD RATE, 7-14 PAN BIT FOLD DRIVE GAIN SEND FILT CLIP, 16-18 WG DECAY BODY TUNE)
 // drum-friendly: short attack, level never too quiet, filter never fully closed. rbs = 1: low values more likely
@@ -248,12 +282,12 @@ rset(11, 40, 100, 0); rset(12, 0, 90, 1); rset(13, 24, 104, 0); rset(14, 0, 127,
 rset(15, 0, 127, 0); rset(16, 0, 127, 0); rset(17, 0, 127, 0); rset(18, 0, 127, 0);
 undo_ok = 0; undone = 0; roll_t = -100;
 // cell locks [1..136]: right-click a bar, or click a row name (= that row in that part). Saved with the project (@serialize)
-// default: LVL (both layers), PAN, GAIN locked in every part
+// default: LVL (both layers), PAN, GAIN, FILT locked in every part (FILT: a random LP/HP can make a part silent, v1.3.5)
 lockm = 3200;
 plock = 3400;      // part lock [0-5], [6] = waveguide (Shift+click the part title; click = select, right-click = SOUND menu)
 ptx = 3410; pty = 3420; ptw = 3430;   // title rectangles for clicks
 LR = 0.95; LG = 0.65; LB = 0.15;   // lock colour amber (red = focus/activity)
-p = 0; loop(6, lockm[p * 22 + 2] = lockm[p * 22 + 9] = lockm[p * 22 + 15] = lockm[p * 22 + 19] = 1; p += 1;);
+p = 0; loop(6, lockm[p * 22 + 2] = lockm[p * 22 + 9] = lockm[p * 22 + 15] = lockm[p * 22 + 19] = lockm[p * 22 + 21] = 1; p += 1;);
 
 function clampv(v) ( max(0, min(127, floor(v + 0.5))) );
 
@@ -286,6 +320,17 @@ function sellong(v, s) local(n) (
   n = floor(v * 45 / 128);
   sprintf(s, "%s · %s · %s", selsrcl(floor(n / 9)), selmod(floor(n / 3) % 3), seleg(n % 3));
 );
+// split Select (v1.5): component c (0 SRC 5 options, 1 MOD.T 3, 2 EG.T 3) of Select slider i
+function ncomp(c) ( c == 0 ? 5 : 3 );
+function getcomp(i, c) local(n) (
+  n = selnum(slider(i));
+  c == 0 ? floor(n / 9) : c == 1 ? floor(n / 3) % 3 : n % 3;
+);
+function compshort(c, x, s) (
+  c == 0 ? strcpy(s, selsrc(x)) :
+  c == 1 ? strcpy(s, x == 0 ? "R-F" : x == 1 ? "OSC" : "RND") :
+           strcpy(s, x == 0 ? "LIN" : x == 1 ? "EXP" : "MUL");
+);
 
 function fmtval(i, v, s) local(mi, f) (
   mi = pm(i);
@@ -300,8 +345,11 @@ function fmtval(i, v, s) local(mi, f) (
 
 function markchange(i) (
   lastchg = i;
+  lastcomp = -1;
   lastchg_t = time_precise();
   i > 0 ? fp = i <= 132 ? floor((i - 1) / 22) : 6;
+  ck_ed = 1;   // current kit name gets a * (edited)
+  gmem[200] = fp;   // focused part for the sound scripts (0-5, 6 = waveguide)
 );
 
 // from @gfx: set, notify host, queue
@@ -326,9 +374,19 @@ function setparam(i, v) (
     mirror(i, v);
   );
 );
+// split Select: set one component to x, keep the other two
+function setcomp(i, c, x) local(n, cs, cm, ce) (
+  n = selnum(slider(i));
+  cs = floor(n / 9); cm = floor(n / 3) % 3; ce = n % 3;
+  x = max(0, min(ncomp(c) - 1, floor(x)));
+  c == 0 ? (cs = x) : c == 1 ? (cm = x) : (ce = x);
+  setparam(i, selval(cs * 9 + cm * 3 + ce));
+  lastcomp = c;
+);
 
 function sendall() local(i) (
   i = 1; loop(NS, dirty[i] = 1; i += 1;);
+  i = 0; loop(6, qdirty[i] = 1; i += 1;);
   sendall_t = time_precise();
 );
 
@@ -390,7 +448,7 @@ function doroll() local(i, t, p) (
   t != 3 && plock[fp] ? (
     fp == 6 ? strcpy(#rm, "WAVEGUIDE IS LOCKED") : sprintf(#rm, "PART %d IS LOCKED", fp + 1);
   ) : (
-  snapundo("ROLL"); 
+  snapundo("ROLL"); ck_ed = 1;
   t == 3 ? (
     p = 0; loop(6, !plock[p] ? rollpart(p, 0); p += 1;); !plock[6] ? rollwg();
     sprintf(#rm, "RANDOM · KIT · %d%%", slider(144));
@@ -409,20 +467,21 @@ function doroll() local(i, t, p) (
 function doundo() local(i, t) (
   undo_ok ? (
     i = 1; loop(NS, t = clampv(slider(i)); putv(i, ub[i]); ub[i] = t; i += 1;);
-    undone = !undone; 
+    undone = !undone; ck_ed = 1;
     undone ? sprintf(#rm, "UNDO · BACK TO BEFORE THE %s", #ul) : sprintf(#rm, "REDO · %s IS BACK", #ul);
     lastchg = -3; lastchg_t = time_precise();
   );
 );
 
 // ---- morph A > B ----
-// SET A / SET B = snapshot of the whole kit. Saved with the project.
+// SET A / SET B = snapshot of the whole kit (+ the kit name, if a kit script loaded it). Saved with the project.
 // Morph slider 148: 0 = A, 100 = B. Select and WG Model switch at 50 %. Locked cells / parts don't move.
 ma = 3500; mb = 3700;   // [1..136]
+function kitname(dst) ( !ckok ? strcpy(dst, "CUSTOM") : ck_ed ? sprintf(dst, "%s*", #ck) : strcpy(dst, #ck); );
 function setab(w) local(i, d) (
   d = w ? mb : ma;
   i = 1; loop(NS, d[i] = clampv(slider(i)); i += 1;);
-  w ? (mb_ok = 1; strcpy(#nb, "SET"); strcpy(#rm, "MORPH · B SET");) : (ma_ok = 1; strcpy(#na, "SET"); strcpy(#rm, "MORPH · A SET"););
+  w ? (mb_ok = 1; kitname(#nb); sprintf(#rm, "MORPH B = %s", #nb);) : (ma_ok = 1; kitname(#na); sprintf(#rm, "MORPH A = %s", #na););
   lastchg = -3; lastchg_t = time_precise();
 );
 function domorph() local(i, m, pt) (
@@ -436,15 +495,48 @@ function domorph() local(i, m, pt) (
       );
       i += 1;
     );
-    sprintf(#rm, "MORPH · A > B · %d%%", slider(148));
+    ckok = 0;
+    sprintf(#rm, "MORPH · %s > %s · %d%%", #na, #nb, slider(148));
   ) : strcpy(#rm, "MORPH · SET A AND B FIRST");
   lastchg = -3; lastchg_t = time_precise();
 );
 
-// ---- copy/paste a part ----
+// ---- sound / kit files + copy/paste ----
+// fbuf = numbers read from a file
 cb = 3900;      // clipboard [0..21] (one part)
-open_menu = 0;
+fbuf = 3950;    // [0..159]
+SBASE = 100; open_menu = 0;   // SBASE = string slot for the picked sound file path
 function msg() ( lastchg = -3; lastchg_t = time_precise(); );
+// file name without folder and .txt
+function basename(src, dst) local(n, s, i, c, ln) (
+  n = strlen(src); s = 0; i = 0;
+  loop(n, c = str_getchar(src, i); (c == 47 || c == 92) ? s = i + 1; i += 1;);
+  ln = n - s;
+  ln > 4 && str_getchar(src, n - 4) == 46 ? ln -= 4;
+  strcpy_substr(dst, src, s, ln);
+);
+// all numbers of the lines that start with a digit -> fbuf. Returns the count, -1 = can't open
+function readnums(path) local(h, n, i, c, v, ind, cnt) (
+  cnt = 0;
+  (h = file_open(path)) >= 0 ? (
+    while (file_string(h, #ln) > 0) (
+      c = str_getchar(#ln, 0);
+      c >= 48 && c <= 57 ? (
+        n = strlen(#ln); i = 0; ind = 0; v = 0;
+        loop(n + 1,
+          c = i < n ? str_getchar(#ln, i) : 32;
+          c >= 48 && c <= 57 ? (v = v * 10 + c - 48; ind = 1;) : (
+            ind && cnt < 160 ? (fbuf[cnt] = v; cnt += 1;);
+            ind = 0; v = 0;
+          );
+          i += 1;
+        );
+      );
+    );
+    file_close(h);
+  ) : (cnt = -1;);
+  cnt;
+);
 function copypart() local(j) (
   fp == 6 ? strcpy(#rm, "COPY · CLICK A PART FIRST") : (
     j = 0; loop(22, cb[j] = clampv(slider(fp * 22 + 1 + j)); j += 1;);
@@ -457,8 +549,22 @@ function pastepart() local(j) (
   !cb_ok ? strcpy(#rm, "PASTE · COPY A PART FIRST") : fp == 6 ? strcpy(#rm, "PASTE · CLICK A PART FIRST") : (
     snapundo("PASTE");
     j = 0; loop(22, putv(fp * 22 + 1 + j, cb[j]); j += 1;);
-
+    ck_ed = 1;
     sprintf(#rm, "PASTED · PART %d > PART %d", cb_from + 1, fp + 1);
+  );
+  msg();
+);
+// sound file k (index in the list) into the focused part. Locks don't apply (explicit load)
+function loadsound(k) local(j, n) (
+  basename(SBASE + k, #fn);
+  fp == 6 ? strcpy(#rm, "SOUND · CLICK A PART FIRST") : (
+    n = readnums(SBASE + k);
+    n != 22 ? sprintf(#rm, "SOUND FILE UNREADABLE · %s", #fn) : (
+      snapundo("SOUND");
+      j = 0; loop(22, putv(fp * 22 + 1 + j, fbuf[j]); j += 1;);
+      ck_ed = 1;
+      sprintf(#rm, "SOUND · %s > PART %d", #fn, fp + 1);
+    );
   );
   msg();
 );
@@ -474,10 +580,13 @@ function pastepart() local(j) (
   );
   // mirror only single changes (knob/automation), never kit loads or the Both pages
   nchg == 1 ? (markchange(ch_i); mirror(ch_i, last[ch_i]);) : nchg > 1 ? (
-    lastchg = -1; lastchg_t = time_precise();
+    // keep a fresh kit message (the script loaded the preset) instead of "KIT LOADED"
+    // (also not while a script message is still unread: gmem[0] != kitcnt)
+    !(lastchg == -2 && time_precise() - lastchg_t < 1.5) && gmem[0] == kitcnt ? (lastchg = -1; lastchg_t = time_precise(); ckok = 0;);
     lastn = nchg;
   );
   slider(SA_IDX) != last_sendall ? (last_sendall = slider(SA_IDX); sendall(););
+  q_ = 0; loop(6, (slider(151 + q_) >= 0.5) != qlast[q_] ? (qlast[q_] = (slider(151 + q_) >= 0.5); qdirty[q_] = 1;); q_ += 1;);
   // Roll / Undo buttons (automation / MIDI controller): fire on 1, reset to 0
   slider(146) >= 0.5 ? (slider(146) = 0; slider_automate(slider(146)); doroll(););
   slider(147) >= 0.5 ? (slider(147) = 0; slider_automate(slider(147)); doundo(););
@@ -485,14 +594,38 @@ function pastepart() local(j) (
 );
 
 @block
+// KIT PER PATTERN (v1.4.7): a sequencer pattern with a kit just started: take its values and send what changed AT ONCE,
+// at offset 0 and before the passed-through MIDI, so the sequencer's locks / notes of this block come after the kit
+!sync_pending && gmem[2600] != kitrx ? (
+  kitrx = gmem[2600]; kn_ = 0; i = 1;
+  loop(NS, v = clampv(gmem[2600 + i]); v != last[i] ? (slider(i) = v; last[i] = v; midisend(0, $xB0 | chn[i], cc[i], v); kn_ += 1;); dirty[i] = 0; i += 1;);
+  kn_ ? (ck_ed = 1; sprintf(#rm, "PATTERN %d KIT · %d PARAMS", gmem[2737] + 1, kn_); msg(););
+);
 // incoming MIDI: re-channel drum notes (note on/off, poly aftertouch), pass the rest
 while (midirecv(mofs, m1, m2, m3)) (
   mt = m1 & $xF0;
-  (mt == $x80 || mt == $x90 || mt == $xA0) && nmap[m2] >= 0 ? m1 = mt | nmap[m2];
+  // ch 11-16 = pitched notes for part 1-6 (sequencer PIT lanes, piano roll): to ch 1-6, note unchanged (v1.3.1)
+  (mt == $x80 || mt == $x90 || mt == $xA0) ? (
+    (m1 & $x0F) >= 10 ? (m1 = mt | ((m1 & $x0F) - 10);) : nmap[m2] >= 0 ? (m1 = mt | nmap[m2];);
+  );
   midisend(mofs, m1, m2, m3);
+);
+// ▶ test hit: note on channel 1-6 (= part), velocity 63 (= panel LEVEL), note-off after 0.2 s
+au_p = 0;
+loop(6,
+  aud[au_p] ? (
+    aud[au_p] = 0;
+    audoff[au_p] > 0 ? midisend(0, $x80 | au_p, anote[au_p], 0);
+    midisend(0, $x90 | au_p, anote[au_p], 63); audoff[au_p] = floor(srate * 0.2);
+  ) : audoff[au_p] > 0 ? (
+    audoff[au_p] -= samplesblock;
+    audoff[au_p] <= 0 ? (midisend(0, $x80 | au_p, anote[au_p], 0); audoff[au_p] = 0;);
+  );
+  au_p += 1;
 );
 sync_pending ? (
   i = 1; loop(NS, last[i] = clampv(slider(i)); dirty[i] = 0; i += 1;);
+  i = 0; loop(6, qlast[i] = (slider(151 + i) >= 0.5); qdirty[i] = 0; i += 1;);
   last_sendall = slider(SA_IDX); last_morph = slider(148);
   sync_pending = 0;
 );
@@ -506,6 +639,29 @@ loop(NS,
   );
   i += 1;
 );
+// QPI link (v1.4.2): when a sequencer lane switches PIT on/off, Q follows (manual Q clicks stay until the next PIT change)
+gmem[1710] == 1 ? (
+  i = 0;
+  loop(6,
+    gmem[1700 + i] != seqq[i] ? (seqq[i] = gmem[1700 + i]; slider(151 + i) = (seqq[i] >= 0.5); slider_automate(slider(151 + i)););
+    i += 1;
+  );
+);
+i = 0;
+loop(6,
+  // QPI: compared every block (GUI clicks don't run @slider), sent when changed or on Send all
+  !sync_pending && (slider(151 + i) >= 0.5) != qlast[i] ? (
+    qlast[i] = (slider(151 + i) >= 0.5); qdirty[i] = 1;
+    // v1.4.3: QPI off = the part may still sit on the last played note: resend L1 + L2 PITCH (sent next block, after the QPI CC)
+    !qlast[i] ? (dirty[i * 22 + 5] = 1; dirty[i * 22 + 12] = 1;);
+  );
+  n < MAXSEND && qdirty[i] ? (midisend(0, $xB0 | i, 53, qlast[i] ? 127 : 0); qdirty[i] = 0; n += 1;);
+  i += 1;
+);
+// share current values, CC numbers and channels with the Volca Drum Sequencer (p-locks, 2026-11-04):
+// gmem[1000 + n] = value of slider n, [1200 + n] = CC, [1400 + n] = channel 0-5, [999] = 1 (panel present)
+pl_i = 1; loop(NS, gmem[1000 + pl_i] = last[pl_i]; gmem[1200 + pl_i] = cc[pl_i]; gmem[1400 + pl_i] = chn[pl_i]; pl_i += 1;);
+gmem[999] = 1;
 
 @serialize
 // v1 = cell locks, v2 = + part locks, v3 = + morph A/B. Old projects without data keep the defaults from @init
@@ -519,24 +675,180 @@ file_avail(0) >= 0 ? (
   file_var(0, ma_ok); file_var(0, mb_ok); file_mem(0, ma + 1, 136); file_mem(0, mb + 1, 136); file_string(0, #na); file_string(0, #nb);
 );
 
-@gfx 1280 810
+@gfx 1280 900
 // everything scales with the window (design size 980 x 620); drag the FX window corner to resize
-// look: gunmetal + warning red. Fonts: Bahnschrift (labels), Consolas (values)
+// looks: Classic (facelift: Bahnschrift + Consolas) or Sleeve (Big Shoulders Display); colors from the role table
 sc = max(0.8, min(gfx_w / 980, gfx_h / 620));
 function S(v) ( floor(v * sc + 0.5) );
+function CF(v) ( floor(v * 1.15 + 0.5) );   // Classic look: text +15 %
 function col(r, g, b, a) ( gfx_r = r; gfx_g = g; gfx_b = b; gfx_a = a; );
 function txt(s, x, y) ( gfx_x = x; gfx_y = y; gfx_drawstr(s); );
 function ctxt(s, x, y, wi) local(tw, th) ( gfx_measurestr(s, tw, th); gfx_x = x + (wi - tw) / 2; gfx_y = y; gfx_drawstr(s); );
 function frame(x, y, w, h) ( gfx_rect(x, y, w, 1); gfx_rect(x, y + h - 1, w, 1); gfx_rect(x, y, 1, h); gfx_rect(x + w - 1, y, 1, h); );
-// accent text with a soft LED glow; a = brightness 0-1
-function glowtxt(s, x, y, a) (
-  col(AR, AG, AB, 0.07 * a); txt(s, x - 2, y); txt(s, x + 2, y); txt(s, x, y - 2); txt(s, x, y + 2);
-  col(AR, AG, AB, 0.16 * a); txt(s, x - 1, y); txt(s, x + 1, y); txt(s, x, y - 1); txt(s, x, y + 1);
-  col(AR, AG, AB, 0.45 + 0.55 * a); txt(s, x, y);
+// ---- themes (2026-11-05): every color is a ROLE; one row of NRO colors per theme in memory at THB, slider 149 picks the row (same table as the sequencer) ----
+THB = 5000; NRO = 33; NTH = 14; TINTA = 6600;
+K_BG = 0; K_BG2 = 1; K_PNL = 2; K_PNLF = 3; K_PNLB = 4; K_FLD = 5; K_FLDB = 6; K_BTN = 7; K_TXT = 8; K_LBL = 9;
+K_DIM = 10; K_DIM2 = 11; K_ACC = 12; K_FOC = 13; K_FOCT = 14; K_ALT = 15; K_HOT = 16; K_RDB = 17; K_RDT = 18; K_CEL = 19;
+K_CELB = 20; K_OUT = 21; K_OUTB = 22; K_OVON = 23; K_OVIN = 24; K_PLY = 25; K_SEL = 26; K_CTX = 27; K_PU = 28; K_SCR = 29;
+K_LINE = 30; K_LINE2 = 31; K_BAR = 32;   // Sleeve look: the brief's line, line2, bar
+// roles: BG/BG2 background gradient · PNL/PNLF/PNLB strips (focused, border) · FLD/FLDB value fields · BTN buttons ·
+// TXT numbers + text · LBL labels · DIM/DIM2 hints · ACC steps, bars, playhead text (= L1 in the brief) · FOC focus
+// (selected part/pattern/tab, active buttons) · FOCT text on FOC · ALT locks, chance, chain · HOT fill-pattern mark ·
+// RDB/RDT readout · CEL/CELB empty cell · OUT/OUTB cells past the lane end · OVON/OVIN overview strip · PLY current
+// step · SEL selection frame · CTX text on lit cells · PU used pattern slot
+function hrgb(h) ( t_r = floor(h / 65536) / 255; t_g = (floor(h / 256) % 256) / 255; t_b = (h % 256) / 255; );
+function thput(t, r, h) local(q) ( hrgb(h); q = THB + (t * NRO + r) * 3; q[0] = t_r; q[1] = t_g; q[2] = t_b; );
+function thmix(t, r, h1, h2, f) local(q, r1, g1, b1) (
+  hrgb(h1); r1 = t_r; g1 = t_g; b1 = t_b; hrgb(h2); q = THB + (t * NRO + r) * 3;
+  q[0] = r1 + (t_r - r1) * f; q[1] = g1 + (t_g - g1) * f; q[2] = b1 + (t_b - b1) * f;
 );
-function screw(x, y) (
-  col(0.23, 0.25, 0.27, 1); gfx_circle(x, y, S(3), 1, 1);
-  col(0.36, 0.38, 0.41, 1); gfx_line(x - S(2), y + S(1), x + S(2), y - S(1));
+// one theme from the 12 colors of the redesign brief (dk = dark theme, 0 = light)
+function thdef(t, dk, bg, fg, num, l1, l1hi, lab, dim, ln, ln2, foc, alt) local(lum) (
+  thmix(t, K_BG, bg, fg, 0.06); thput(t, K_BG2, bg);
+  thmix(t, K_PNL, bg, fg, 0.05); thmix(t, K_PNLF, bg, fg, 0.10); thmix(t, K_PNLB, ln, fg, 0.06);
+  dk ? thmix(t, K_FLD, bg, 0, 0.45) : thmix(t, K_FLD, bg, $xffffff, 0.6);
+  thmix(t, K_FLDB, ln, fg, 0.18);
+  dk ? thmix(t, K_BTN, bg, fg, 0.035) : thmix(t, K_BTN, bg, $xffffff, 0.3);
+  thput(t, K_TXT, num); thput(t, K_LBL, lab); thput(t, K_DIM, dim); thmix(t, K_DIM2, dim, bg, 0.3);
+  thput(t, K_ACC, l1); thput(t, K_FOC, foc); thput(t, K_ALT, alt);
+  // text on the focus color: light themes with a bright focus color need dark text (same rule as the sequencer)
+  hrgb(foc); lum = 0.3 * t_r + 0.59 * t_g + 0.11 * t_b;
+  thput(t, K_FOCT, !dk && lum > 0.5 ? num : bg);
+  thput(t, K_HOT, dk ? $xffbf4d : $xa85d00);
+  dk ? (thmix(t, K_RDB, bg, 0, 0.55); thput(t, K_RDT, l1hi);) : (thmix(t, K_RDB, fg, bg, 0.08); thmix(t, K_RDT, l1hi, $xffffff, 0.3););
+  dk ? thmix(t, K_CEL, bg, fg, 0.03) : thmix(t, K_CEL, bg, $xffffff, 0.35);
+  thmix(t, K_CELB, ln, fg, 0.04);
+  dk ? thmix(t, K_OUT, bg, 0, 0.35) : thmix(t, K_OUT, bg, fg, 0.07);
+  thmix(t, K_OUTB, ln2, bg, 0.3);
+  thmix(t, K_OVON, l1, bg, 0.3); thmix(t, K_OVIN, ln, fg, 0.12);
+  thput(t, K_PLY, fg); thput(t, K_SEL, foc);
+  hrgb(l1); lum = 0.3 * t_r + 0.59 * t_g + 0.11 * t_b;
+  thput(t, K_CTX, dk && lum > 0.65 ? bg : num);   // bright step color (yellow, white): dark text on lit cells
+  thmix(t, K_PU, bg, fg, 0.09); thmix(t, K_SCR, bg, fg, 0.14);
+  thput(t, K_LINE, ln); thput(t, K_LINE2, ln2); thmix(t, K_BAR, ln, fg, 0.35); TINTA[t] = 0.1;
+);
+thinit != 5 ? (   // 3 = table format version (NRO 33); bump when roles change
+  //    theme dark  bg         fg         num        l1         l1hi       label      dim        line       line2      focus      alt
+  thdef(0,  1, $x1b1d20, $xf2f2f5, $xf2f2f5, $xe8362b, $xe8362b, $x9aa0a6, $x8a9096, $x2f3337, $x2b2e32, $xe8362b, $x9eb3c4);   // Classic
+  // Classic = the layout v2 mockup colors exactly
+  thput(0, K_BG, $x24272b); thput(0, K_PNL, $x1e2023); thput(0, K_PNLF, $x26292d); thput(0, K_PNLB, $x2f3337);
+  thput(0, K_FLD, $x121315); thput(0, K_FLDB, $x44494f); thput(0, K_BTN, $x1a1b1e); thput(0, K_DIM2, $x686d73);
+  thput(0, K_FOCT, $xffffff); thput(0, K_RDB, $x0b0c0d); thput(0, K_CEL, $x17181b); thput(0, K_CELB, $x2b2e32);
+  thput(0, K_OUT, $x101113); thput(0, K_OUTB, $x1c1e21); thput(0, K_OVON, $xa8322a); thput(0, K_OVIN, $x3a3e43);
+  thput(0, K_PLY, $xffffff); thput(0, K_SEL, $xf2f2f5); thput(0, K_CTX, $xffffff); thput(0, K_PU, $x2a2c30); thput(0, K_SCR, $x3a3d42);
+  thdef(1,  1, $x0b0b0b, $xe7e0d0, $xf0eadb, $xd8291d, $xff5a48, $xb5ae9f, $x8d877a, $x262626, $x1d1d1d, $xe6a23c, $x8fb0c4);   // Sleeve
+  thdef(2,  1, $x0c0c0b, $xe9e4d6, $xf4efe2, $xe8b31b, $xffcc33, $xb5ae9f, $x8d877a, $x262624, $x1d1d1b, $xf05a28, $x8fb0c4);   // Hazard
+  thdef(3,  1, $x0b0f12, $xdfe6ea, $xeef3f6, $x3aa9c9, $x6fd0ea, $xa3b1ba, $x71808a, $x1f272d, $x161d22, $xe3a04a, $xb8a4e3);   // Cold steel
+  thdef(4,  1, $x0d0a06, $xe8dcc4, $xf2e8d4, $xff9f1a, $xffb84d, $xb8a98c, $x8a7b62, $x2a2219, $x1d1812, $x4fc3b0, $x9fc8e0);   // Amber CRT
+  thdef(5,  1, $x11130e, $xdcd6bb, $xebe5ca, $xe0601c, $xff8040, $xaeaa8e, $x7f7d66, $x262a20, $x1b1e17, $xe8c547, $x9db8c9);   // Field olive
+  thdef(6,  1, $x141414, $xc9c6bf, $xf2f0ea, $xf2f0ea, $xffffff, $xa6a39c, $x7c7a75, $x2a2a2a, $x202020, $xd4281c, $x8fb0c4);   // Concrete
+  thdef(7,  0, $xe9e5db, $x161514, $x0d0c0b, $xc41e14, $xc41e14, $x4a463f, $x6f6a60, $xc9c3b6, $xd9d4c8, $x1d4fb8, $x2f7d74);   // Xerox (light)
+  thdef(8,  0, $xd3d5d7, $x1e2226, $x121518, $x2f6aa8, $x2f6aa8, $x464c52, $x6a7076, $xb5b9bd, $xc4c7ca, $xd98a12, $x6b4fa3);   // Plant light (light)
+  thdef(9,  1, $x0f2b4c, $xdbe7f3, $xf3f8fc, $xf2c53d, $xffd866, $xa9c0d6, $x7f9bb8, $x234469, $x1a385b, $xff7b5c, $x8fd3e8);   // Blueprint
+  thdef(10, 1, $x050a06, $xb9e3b1, $xd6f5cf, $x3fcf5e, $x7cf08f, $x8fb489, $x5f7f5b, $x142116, $x0e1810, $xf2e36b, $x8fc7e8);   // Night vision
+  thdef(11, 1, $x140708, $xe6d5c6, $xf3e6d9, $xa3202a, $xe04450, $xb89c8f, $x8a6f66, $x2b1416, $x200d0f, $xd4ae64, $x9fb3c4);   // Oxblood
+  thdef(12, 1, $x18191a, $xd6d2ca, $xece8df, $xc0602e, $xe88350, $xaaa59c, $x7d7a74, $x2b2c2d, $x212223, $x6fb3b8, $xa9b8d8);   // Rust
+  thdef(13, 0, $xa9adb1, $x15181b, $x0d0f11, $x2a5f98, $x2a5f98, $x34393e, $x4f555b, $x8f949a, $x9da2a7, $xd98a12, $x5b3f93);   // Plant grey (darker Plant light)
+  // Sleeve look extras (Volca Sequencer Looks page): bar color + tint strength per color
+  thput(1, K_BAR, $x6d685e); thput(2, K_BAR, $x6d685e); thput(3, K_BAR, $x4f5d66); thput(4, K_BAR, $x6e5f48);
+  thput(5, K_BAR, $x62624e); thput(6, K_BAR, $x5e5c58); thput(7, K_BAR, $x9a9488); thput(8, K_BAR, $x8a9096);
+  thput(9, K_BAR, $x5c7da0); thput(10, K_BAR, $x3f5c40); thput(11, K_BAR, $x6a4c46); thput(12, K_BAR, $x5f5c57);
+  TINTA[1] = 0.12; TINTA[2] = 0.10; TINTA[3] = 0.10; TINTA[4] = 0.09; TINTA[5] = 0.10; TINTA[6] = 0.06;
+  TINTA[7] = 0.08; TINTA[8] = 0.09; TINTA[9] = 0.10; TINTA[10] = 0.10; TINTA[11] = 0.14; TINTA[12] = 0.11; TINTA[13] = 0.12; thput(13, K_BAR, $x6a7076);
+  thinit = 5;
+);
+// condensed font of the Sleeve look: Big Shoulders Display if installed, else Bahnschrift Condensed (checked every 10 s,
+// so a freshly installed font shows up without reloading). A missing font measures like any other missing font.
+function fontok(nm) local(w1, w2, hh) (
+  gfx_setfont(9, nm, 40); gfx_measurestr("MWmw0123ABC", w1, hh);
+  gfx_setfont(9, "zqxNoSuchFont77", 40); gfx_measurestr("MWmw0123ABC", w2, hh);
+  abs(w1 - w2) > 0.5;
+);
+time_precise() - fontt > 10 || !fontt ? (
+  fontt = time_precise();
+  // ExtraBold cut = thicker strokes (reads bigger); static weights show up as their own family names
+  sfb = 'b';
+  0 && fontok("Big Shoulders Display ExtraBold") ? (strcpy(#sf, "Big Shoulders Display ExtraBold"); sfb = 0;)   // ExtraBold OFF: stepped edges (2026-11-05)
+  : fontok("Big Shoulders Display") ? strcpy(#sf, "Big Shoulders Display") : fontok("Bahnschrift Condensed") ? strcpy(#sf, "Bahnschrift Condensed") : strcpy(#sf, "Bahnschrift");
+);
+theme = max(0, min(NTH - 1, slider149 | 0));
+skin = slider150 >= 0.5;   // LOOK: 0 Classic (facelift), 1 Sleeve · COLOR: any of the 14 works with both looks
+function rc(r, a) local(q) ( q = THB + (theme * NRO + r) * 3; gfx_r = q[0]; gfx_g = q[1]; gfx_b = q[2]; gfx_a = a; );
+function thname(i) (
+  i == 0 ? "CLASSIC RED" : i == 1 ? "SLEEVE RED" : i == 2 ? "HAZARD" : i == 3 ? "COLD STEEL" : i == 4 ? "AMBER CRT" : i == 5 ? "FIELD OLIVE" :
+  i == 6 ? "CONCRETE" : i == 7 ? "XEROX" : i == 8 ? "PLANT LIGHT" : i == 9 ? "BLUEPRINT" : i == 10 ? "NIGHT VISION" : i == 11 ? "OXBLOOD" : i == 12 ? "RUST" : "PLANT GREY";
+);
+function setlook(v) ( slider150 = v; slider_automate(slider150); skin = v; strcpy(#rm, v ? "LOOK · SLEEVE" : "LOOK · CLASSIC"); msg(); );
+function settheme(i) ( slider149 = (i + NTH) % NTH; slider_automate(slider149); theme = slider149; sprintf(#rm, "COLOR · %s", thname(theme)); msg(); );
+function thmenu() local(r, i) (
+  strcpy(#m, "[  COLOR  ]|"); i = 0;
+  loop(NTH, i == theme ? strcat(#m, "!"); strcat(#m, thname(i)); i < NTH - 1 ? strcat(#m, "|"); i += 1;);
+  gfx_x = mouse_x; gfx_y = mouse_y; r = gfx_showmenu(#m);
+  r >= 2 ? settheme(r - 2);
+);
+function inr(x, y, w, h) ( mouse_x >= x && mouse_x < x + w && mouse_y >= y && mouse_y < y + h );
+function fit(s, w) local(fw_, fh_, n) (
+  strcpy(#fit, s); fw_ = 0; fh_ = 0;
+  strlen(#fit) > 0 ? gfx_measurestr(#fit, fw_, fh_);
+  fw_ > w ? (
+    n = strlen(#fit); strcpy(#fit2, #fit);
+    while (n > 1 && fw_ > w) (n -= 1; str_setlen(#fit, n); strcpy(#fit2, #fit); strcat(#fit2, "..."); gfx_measurestr(#fit2, fw_, fh_););
+    strcpy(#fit, #fit2);
+  );
+  #fit;
+);
+function rtxt(s, xr, y) local(w, h) ( gfx_measurestr(s, w, h); gfx_x = xr - w; gfx_y = y; gfx_drawstr(s); );
+// ---- Sleeve helpers (same as the sequencer) ----
+SFK = 1.25;   // condensed font reads small: Sleeve text +25 %
+function sfont(id, sz) ( gfx_setfont(id, #sf, floor(sz * SFK + 0.5), sfb); );
+function frame2(x, y, w, h, t) ( gfx_rect(x, y, w, t); gfx_rect(x, y + h - t, w, t); gfx_rect(x, y, t, h); gfx_rect(x + w - t, y, t, h); );
+function slant(x, y, w, h, d) ( gfx_triangle(x + d, y, x + d + w, y, x + w, y + h, x, y + h); );
+function otxt(s, x, y, ow) (
+  rc(K_PLY, 1); txt(s, x - ow, y); txt(s, x + ow, y); txt(s, x, y - ow); txt(s, x, y + ow);
+  txt(s, x - ow, y - ow); txt(s, x + ow, y + ow); txt(s, x - ow, y + ow); txt(s, x + ow, y - ow);
+  rc(K_BG2, 1); txt(s, x, y);
+);
+// header cell of the Sleeve look: thick fg line left, thin line below
+function shbtn(x, y, w, h, s, fs) (
+  rc(K_PLY, 1); gfx_rect(x, y, S(4), h);
+  rc(K_LINE, 1); gfx_rect(x + S(4), y + h - S(2), w - S(4), S(2));
+  sfont(4, fs); rc(K_PLY, 1); ctxt(fit(s, w - S(10)), x + S(4), y + (h - fs * SFK) / 2, w - S(4));
+);
+// accent text: Classic = LED glow, Sleeve = plain
+function glowtxt(s, x, y, a) (   // gte = fade-in factor of the readout (v1.4.8), 1 = full
+  skin ? (rc(K_TXT, (0.6 + 0.4 * a) * gte); txt(s, x, y);) : (
+    rc(K_RDT, 0.07 * a * gte); txt(s, x - 2, y); txt(s, x + 2, y); txt(s, x, y - 2); txt(s, x, y + 2);
+    rc(K_RDT, 0.16 * a * gte); txt(s, x - 1, y); txt(s, x + 1, y); txt(s, x, y - 1); txt(s, x, y + 1);
+    rc(K_RDT, (0.75 + 0.25 * a) * gte); txt(s, x, y);   // v1.4.8.3: stale text = sequencer level (was 0.45)
+  );
+);
+function rfont(id, sz) ( skin ? sfont(id, floor(sz * 0.9)) : gfx_setfont(id, "Consolas", sz); );
+function screw(x, y) ( rc(K_SCR, 1); gfx_circle(x, y, S(3), 1, 1); rc(K_DIM2, 1); gfx_line(x - S(2), y + S(1), x + S(2), y - S(1)); );
+// Classic button: soft gradient + frame
+function gbtn(x, y, w, h) local(r1, g1, b1) (
+  rc(K_PU, 1); r1 = gfx_r; g1 = gfx_g; b1 = gfx_b; rc(K_BTN, 1);
+  gfx_gradrect(x, y, w, h, r1, g1, b1, 1, 0, 0, 0, 0, (gfx_r - r1) / h, (gfx_g - g1) / h, (gfx_b - b1) / h, 0);
+  rc(K_FLDB, 1); frame(x, y, w, h);
+);
+// small toggle / segment button in both looks; on = focus color
+function tbtn(x, y, w, h, s, on, fs) (
+  skin ? (
+    on ? (rc(K_FOC, 1); gfx_rect(x, y, w, h);) : (rc(K_PLY, 1); frame2(x, y, w, h, S(2)););
+    sfont(3, fs); on ? rc(K_FOCT, 1) : rc(K_PLY, 1); ctxt(s, x, y + (h - fs * SFK) / 2, w);
+  ) : (
+    on ? (rc(K_FOC, 0.85); gfx_rect(x, y, w, h);) : (rc(K_FLD, 1); gfx_rect(x, y, w, h); rc(K_FLDB, 1); frame(x, y, w, h););
+    gfx_setfont(3, "Bahnschrift", CF(fs), 'b'); on ? rc(K_FOCT, 1) : rc(K_LBL, 1); ctxt(s, x, y + (h - CF(fs)) / 2 - 1, w);
+  );
+);
+// play button: one hit on that part (velocity 63 = panel level), sent from @block
+function playbtn(p, x, y, w, h) local(fl, cx, cy) (
+  plx[p] = x; ply[p] = y; plw = w; plh = h;
+  fl = max(0, 1 - (now - audt[p]) / 0.3);
+  skin ? (rc(K_PLY, 1); frame2(x, y, w, h, S(2));) : (rc(K_FLD, 1); gfx_rect(x, y, w, h); rc(K_FLDB, 1); frame(x, y, w, h););
+  fl > 0 ? (rc(K_ACC, fl); gfx_rect(x, y, w, h););
+  cx = x + w / 2; cy = y + h / 2;
+  rc(fl > 0.5 ? K_BG2 : K_TXT, 1);
+  gfx_triangle(cx - S(3), cy - S(4), cx - S(3), cy + S(4), cx + S(4), cy);
 );
 
 // kind: 1 = layer 1, 2 = layer 2, 3 = part, 4 = waveguide
@@ -544,56 +856,188 @@ function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
   bx[i] = x; by[i] = y; bw[i] = wi; bh[i] = h;
   v = clampv(slider(i));
   hot = (i == lastchg) ? max(0.35, 1 - (now - lastchg_t) / 4) : 0;
-  col(0.071, 0.075, 0.082, 1); gfx_rect(x, y, wi, h);
-  kind == 1 ? col(AR, AG, AB, 0.72 + 0.28 * hot) :
-  kind == 2 ? col(0.62, 0.70, 0.77, 0.55 + 0.35 * hot) :
-              col(0.79, 0.80, 0.82, 0.40 + 0.45 * hot);
-  lockm[i] ? gfx_a *= 0.4;   // locked for randomize: dimmed + red strip
-  (pm(i) == 0 || pm(i) == 6) ? (
-    f = (v - 64) / 64 * (wi / 2);
-    f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
-    col(0.29, 0.31, 0.33, 1); gfx_rect(x + wi / 2, y + 2, 1, h - 4);
-  ) : i == 133 ? (
-    v < 64 ? gfx_rect(x, y, wi / 2, h) : gfx_rect(x + wi / 2, y, wi / 2, h);
+  fmtval(i, v, 20);
+  skin ? (
+    // ---- Sleeve: no box. Layer cells: value top right + 3 px bar at the bottom; L1 column tinted
+    kind == 1 ? (rc(K_ACC, ta_); gfx_rect(x, y, wi, h););
+    i == 133 ? (
+      // WG model = two segments
+      v < 64 ? (rc(K_FOC, 1); gfx_rect(x, y, wi / 2 - S(2), h); rc(K_PLY, 1); frame2(x + wi / 2 + S(2), y, wi / 2 - S(2), h, S(2));)
+             : (rc(K_PLY, 1); frame2(x, y, wi / 2 - S(2), h, S(2)); rc(K_FOC, 1); gfx_rect(x + wi / 2 + S(2), y, wi / 2 - S(2), h););
+      sfont(3, S(15));
+      v < 64 ? rc(K_FOCT, 1) : rc(K_PLY, 1); ctxt("TUBE", x, y + (h - S(15) * SFK) / 2, wi / 2 - S(2));
+      v >= 64 ? rc(K_FOCT, 1) : rc(K_PLY, 1); ctxt("STRING", x + wi / 2 + S(2), y + (h - S(15) * SFK) / 2, wi / 2 - S(2));
+    ) : (
+      // the whole cell is the bar (value fills from the left; pan / filter from the centre)
+      kind == 1 ? rc(K_ACC, 0.6) : kind == 2 ? rc(K_PLY, 0.3) : rc(K_BAR, 0.6);
+      hot > 0 ? rc(K_FOC, 0.75);
+      lockm[i] ? gfx_a *= 0.5;
+      (pm(i) == 0 || pm(i) == 6) ? (
+        f = (v - 64) / 64 * (wi / 2);
+        f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
+        rc(K_PLY, 0.5); gfx_rect(x + wi / 2, y, 1, h);
+      ) : gfx_rect(x, y, max(1, v / 127 * wi), h);
+      sfont(5, kind <= 2 ? S(15) : kind == 4 ? S(17) : S(14));
+      rc(K_TXT, 1);
+      gfx_measurestr(20, tw, th);
+      txt(20, x + wi - tw - S(4), y + (h - th) / 2);
+    );
+    lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, S(3), h););
   ) : (
-    gfx_rect(x, y, max(1, v / 127 * wi), h);
+    // ---- Classic (facelift): dark field, colored bar, value right
+    rc(K_FLD, 1); gfx_rect(x, y, wi, h);
+    kind == 1 ? rc(K_ACC, 0.72 + 0.28 * hot) : kind == 2 ? rc(K_ALT, 0.55 + 0.35 * hot) : rc(K_TXT, 0.40 + 0.45 * hot);
+    lockm[i] ? gfx_a *= 0.4;   // locked for randomize: dimmed + strip
+    (pm(i) == 0 || pm(i) == 6) ? (
+      f = (v - 64) / 64 * (wi / 2);
+      f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
+      rc(K_FLDB, 1); gfx_rect(x + wi / 2, y + 2, 1, h - 4);
+    ) : i == 133 ? (
+      v < 64 ? gfx_rect(x, y, wi / 2, h) : gfx_rect(x + wi / 2, y, wi / 2, h);
+    ) : (
+      gfx_rect(x, y, max(1, v / 127 * wi), h);
+    );
+    lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, max(2, S(3)), h););
+    hot > 0 ? (
+      rc(K_FOC, 0.10 * hot); frame(x - 3, y - 3, wi + 6, h + 6);
+      rc(K_FOC, 0.25 * hot); frame(x - 2, y - 2, wi + 4, h + 4);
+      rc(K_FOC, hot); frame(x - 1, y - 1, wi + 2, h + 2);
+    ) : (
+      rc(K_CELB, 1); frame(x - 1, y - 1, wi + 2, h + 2);
+    );
+    h >= 11 ? (
+      gfx_setfont(5, "Consolas", min(CF(S(14)), h));
+      gfx_measurestr(20, tw, th);
+      i == 133 ? rc(K_BG2, 1) : rc(K_TXT, 0.95);
+      // WG Model switch: name centred in the lit half (TUBE left, STRING right), dark text on the light half
+      i == 133 ? txt(20, (v < 64 ? x : x + wi / 2) + (wi / 2 - tw) / 2, y + (h - th) / 2)
+               : txt(20, x + wi - tw - S(3), y + (h - th) / 2);
+    );
   );
-  lockm[i] ? (col(LR, LG, LB, 1); gfx_rect(x, y, max(2, S(3)), h););
-  hot > 0 ? (
-    col(AR, AG, AB, 0.10 * hot); frame(x - 3, y - 3, wi + 6, h + 6);
-    col(AR, AG, AB, 0.25 * hot); frame(x - 2, y - 2, wi + 4, h + 4);
-    col(AR, AG, AB, hot); frame(x - 1, y - 1, wi + 2, h + 2);
+);
+// split Select cell (v1.5): component c of Select slider i as a segmented bar, one segment per option; kind 1 = L1, 2 = L2
+function drawsel(i, c, x, y, wi, h, kind) local(n, v, hot, j, tw, th) (
+  vsi[nv] = i; vsc[nv] = c; vsx[nv] = x; vsy[nv] = y; vsw[nv] = wi; vsh[nv] = h; nv += 1;
+  bw[i] = 0; bh[i] = 0;   // the Select slider itself has no bar any more (no stale hit area)
+  n = ncomp(c); v = getcomp(i, c);
+  hot = (i == lastchg && (lastcomp < 0 || lastcomp == c)) ? max(0.35, 1 - (now - lastchg_t) / 4) : 0;
+  compshort(c, v, 20);
+  skin ? (
+    kind == 1 ? (rc(K_ACC, ta_); gfx_rect(x, y, wi, h););
+    kind == 1 ? rc(K_ACC, 0.6) : rc(K_PLY, 0.3);
+    hot > 0 ? rc(K_FOC, 0.75);
+    lockm[i] ? gfx_a *= 0.5;
+    gfx_rect(x, y, max(1, floor((v + 1) * wi / n)), h);
+    rc(K_BG2, 0.7); j = 1; loop(n - 1, gfx_rect(x + floor(j * wi / n), y + S(2), 1, h - S(4)); j += 1;);   // segment ticks
+    sfont(5, S(15)); rc(K_TXT, 1);
+    gfx_measurestr(20, tw, th); txt(20, x + wi - tw - S(4), y + (h - th) / 2);
+    lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, S(3), h););
   ) : (
-    col(0.17, 0.18, 0.2, 1); frame(x - 1, y - 1, wi + 2, h + 2);
-  );
-  h >= 11 ? (
-    gfx_setfont(5, "Consolas", min(S(14), h));
-    fmtval(i, v, 20);
-    gfx_measurestr(20, tw, th);
-    i == 133 ? col(0.05, 0.055, 0.06, 1) : col(0.95, 0.95, 0.96, 0.95);
-    // WG Model switch: name centred in the lit half (TUBE left, STRING right), dark text on the light half
-    i == 133 ? txt(20, (v < 64 ? x : x + wi / 2) + (wi / 2 - tw) / 2, y + (h - th) / 2)
-             : txt(20, x + wi - tw - S(3), y + (h - th) / 2);
+    rc(K_FLD, 1); gfx_rect(x, y, wi, h);
+    kind == 1 ? rc(K_ACC, 0.72 + 0.28 * hot) : rc(K_ALT, 0.55 + 0.35 * hot);
+    lockm[i] ? gfx_a *= 0.4;
+    gfx_rect(x, y, max(1, floor((v + 1) * wi / n)), h);
+    rc(K_FLD, 0.9); j = 1; loop(n - 1, gfx_rect(x + floor(j * wi / n), y + 2, 1, h - 4); j += 1;);   // segment ticks
+    lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, max(2, S(3)), h););
+    hot > 0 ? (
+      rc(K_FOC, 0.10 * hot); frame(x - 3, y - 3, wi + 6, h + 6);
+      rc(K_FOC, 0.25 * hot); frame(x - 2, y - 2, wi + 4, h + 4);
+      rc(K_FOC, hot); frame(x - 1, y - 1, wi + 2, h + 2);
+    ) : (
+      rc(K_CELB, 1); frame(x - 1, y - 1, wi + 2, h + 2);
+    );
+    h >= 11 ? (
+      gfx_setfont(5, "Consolas", min(CF(S(14)), h));
+      gfx_measurestr(20, tw, th); rc(K_TXT, 0.95); txt(20, x + wi - tw - S(3), y + (h - th) / 2);
+    );
   );
 );
 
 now = time_precise();
-AR = 0.91; AG = 0.21; AB = 0.17;   // warning red #e8362b
+ta_ = TINTA[theme];
 MG = S(10);
-SBW = S(140);
-gfx_gradrect(0, 0, gfx_w, gfx_h, 0.141, 0.153, 0.169, 1, 0, 0, 0, 0, -0.039 / gfx_h, -0.043 / gfx_h, -0.047 / gfx_h, 0);
-screw(S(6), S(6)); screw(gfx_w - S(6), S(6)); screw(S(6), gfx_h - S(6)); screw(gfx_w - S(6), gfx_h - S(6));
+SENDBW = S(140); LCW = S(16);   // LOOK / COLOR = two small icons in the title block (both looks, v1.4.4)
+skin ? (rc(K_BG2, 1); gfx_rect(0, 0, gfx_w, gfx_h);) : (
+  rc(K_BG, 1); bg_r = gfx_r; bg_g = gfx_g; bg_b = gfx_b; rc(K_BG2, 1);
+  gfx_gradrect(0, 0, gfx_w, gfx_h, bg_r, bg_g, bg_b, 1, 0, 0, 0, 0, (gfx_r - bg_r) / gfx_h, (gfx_g - bg_g) / gfx_h, (gfx_b - bg_b) / gfx_h, 0);
+  screw(S(6), S(6)); screw(gfx_w - S(6), S(6)); screw(S(6), gfx_h - S(6)); screw(gfx_w - S(6), gfx_h - S(6));
+);
 
+// ---- kit messages from the scripts ----
+gmem[0] != kitcnt ? (
+  kitcnt = gmem[0]; kitkind = gmem[1];
+  strcpy(#kn, ""); k = 0;
+  loop(min(gmem[2], 60), sprintf(#ch, "%c", gmem[3 + k]); strcat(#kn, #ch); k += 1;);
+  lastchg = -2; lastchg_t = now;
+  kitkind == 3 ? sendall_t = now;
+  kitkind == 1 || kitkind == 2 ? (strcpy(#ck, #kn); ckok = 1; ck_ed = 0;);   // name for Morph A/B
+  kitkind == 4 ? ck_ed = 1;   // sound loaded into a part = kit edited
+);
 
-// ---- readout ----
-READH = S(62);
-RW = gfx_w - 3 * MG - SBW;
-col(0.043, 0.047, 0.051, 1); gfx_rect(MG, MG, RW, READH);
-col(0, 0, 0, 0.55); gfx_rect(MG, MG, RW, S(3));
-col(0.2, 0.216, 0.235, 1); frame(MG, MG, RW, READH);
+// ---- header geometry ----
+flash = max(0, 1 - (now - sendall_t) / 1.5);
+!skin ? (
+  READH = S(62); HDB = MG + READH;   // HDB = bottom of the header
+  TBW = S(190);   // title block (v1.3.4: slimmer): same identity as the sequencer
+  RW = gfx_w - 4 * MG - SENDBW - TBW;
+  RDX0 = MG + TBW + MG; RDY0 = MG; RDW0 = RW; RDH0 = READH; RVR = RDX0 + RW - S(16); RX = RDX0 + S(16);
+  LKBH = S(16); CLBX = MG + TBW - LCW; LKBX = CLBX - S(6) - LCW; LKBY = MG + S(6); CLBY = LKBY;   // LOOK + COLOR icons, title block
+  sbx = gfx_w - MG - SENDBW; sby = MG; sbw = SENDBW; sbh = READH - S(26);
+  ssx = sbx; ssy = sby + sbh + S(4); ssw = SENDBW; ssh = READH - sbh - S(4);
+  // readout box
+  rc(K_RDB, 1); gfx_rect(RDX0, MG, RW, READH);
+  rc(K_RDB, 0.55); gfx_rect(RDX0, MG, RW, S(3));
+  rc(K_FLDB, 0.8); frame(RDX0, MG, RW, READH);
+  // title block
+  gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
+  gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5 · classic", MG + S(1), MG + S(47));   // bump on every change
+  // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
+  rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
+  rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
+  // SEND ALL + SOUND
+  gbtn(sbx, sby, sbw, sbh);
+  flash > 0 ? (rc(K_ACC, 0.55 * flash); gfx_rect(sbx, sby, sbw, sbh););
+  gfx_setfont(4, "Bahnschrift", CF(S(16)), 'b'); rc(K_TXT, 1); ctxt(flash > 0 ? "SENT" : "SEND ALL", sbx, sby + (sbh - CF(S(16))) / 2 - 1, sbw);
+  gbtn(ssx, ssy, ssw, ssh);
+  gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_TXT, 1); ctxt("SOUND", ssx, ssy + (ssh - CF(S(11))) / 2 - 1, ssw);
+) : (
+  HDH = S(86); HDB = HDH + S(5);
+  TTW = S(124); sbw = S(90); sbx = gfx_w - sbw; sby = 0; sbh = HDH;
+  ssw = S(80); ssx = sbx - ssw; ssy = 0; ssh = HDH;
+  LKBH = S(16); CLBX = TTW - S(8) - LCW; LKBX = CLBX - S(6) - LCW; LKBY = S(8); CLBY = LKBY;   // icons in the title block, like the sequencer
+  RDX0 = TTW; RDY0 = S(14); RDW0 = ssx - TTW; RDH0 = HDH - S(14); RX = TTW + S(18); RVR = RDX0 + 0.8 * RDW0;
+  SNY = S(24); SVY = S(48);   // name line / value line
+  // title block
+  rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
+  gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
+  sfont(3, S(11)); txt("P A N E L", S(13), S(58));
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5 · sleeve", S(13), S(72));   // bump on every change
+  // LOOK icon (half-filled square) + COLOR swatch
+  rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
+  rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
+  // status stripes
+  sd_ = 0.17 * HDH; rc(K_ACC, 1);
+  slant(RDX0 + 0.82 * RDW0 - sd_ / 2, 0, 0.02 * RDW0, HDH, sd_);
+  slant(RDX0 + 0.89 * RDW0 - sd_ / 2, 0, 0.01 * RDW0, HDH, sd_);
+  sfont(3, S(11)); rc(K_DIM, 1); txt("S T A T U S", RX, S(8));
+  // SOUND, SEND ALL
+  shbtn(ssx, ssy, ssw, ssh, "SOUND", S(19));
+  flash > 0 ? rc(K_FOC, 1) : rc(K_ACC, 1); gfx_rect(sbx, sby, sbw, sbh);
+  sfont(4, S(21)); rc(K_BG2, 1);
+  flash > 0 ? ctxt("SENT", sbx, sby + (sbh - S(21) * SFK) / 2, sbw)
+            : (ctxt("SEND", sbx, sby + sbh / 2 - S(21) * SFK + S(2), sbw); ctxt("ALL", sbx, sby + sbh / 2 - S(2), sbw););
+  rc(K_PLY, 1); gfx_rect(0, HDH, gfx_w, S(5));
+);
+(lkhit = inr(LKBX, LKBY, LCW, LKBH)) ? (rc(K_FOC, 0.8); frame(LKBX - 1, LKBY - 1, LCW + 2, LKBH + 2););
+(clhit = inr(CLBX, CLBY, LCW, LKBH)) ? (rc(K_FOC, 0.8); frame(CLBX - 1, CLBY - 1, LCW + 2, LKBH + 2););
+
+// ---- readout text (same content in both looks) ----
 fresh = max(0, 1 - (now - lastchg_t) / 4);
-gfx_setfont(2, "Consolas", S(28));
-RX = MG + S(16); RY = MG + (READH - S(28)) / 2;
+// v1.4.8: new readout content fades in (ease-out, 0.35 s) and slides up a few px; fast changes (drags) show at once
+(lastchg != plc || (lastchg < 0 && lastchg_t != plt && !(tipon && lastchg_t == tipt))) ? (r1t = (now - r1c > 0.3 ? now : now - 1); r1c = now; plc = lastchg;);
+plt = lastchg_t;
+r1e = min(1, max(0, (now - r1t) / 0.35)); r1e = 1 - (1 - r1e) * (1 - r1e) * (1 - r1e); r1y = floor((1 - r1e) * S(6)); gte = 0.15 + 0.85 * r1e;
 lastchg > 0 ? (
   lastchg <= 132 ? (
     p = floor((lastchg - 1) / 22) + 1;
@@ -603,239 +1047,404 @@ lastchg > 0 ? (
   ) : sprintf(30, "WAVEGUIDE · %s", wlong(lastchg - 133));
   tlen > 0 && tparam == lastchg ? sprintf(31, "TYPE %d_", tval) : (issel(lastchg) ? sellong(clampv(slider(lastchg)), 31) : fmtval(lastchg, clampv(slider(lastchg)), 31));
   // fixed sizes (no jumping): Select combinations smaller so the longest fits
-  gfx_setfont(6, "Consolas", issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? S(24) : S(38));
+  rfont(6, issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? S(24) : skin ? S(26) : S(38));
   gfx_measurestr(31, vw, vh);
   issel(lastchg) && !(tlen > 0 && tparam == lastchg) ? (
     // Select: three fixed, left-aligned columns (SRC 8 chars · MOD 9 · EG 5), nothing moves
     gfx_measurestr("M", cw, vh);
-    vw = 28 * cw; sx = MG + RW - vw - S(16); sy = MG + (READH - vh) / 2;
+    vw = 28 * cw; sx = (skin ? RX : RVR - vw); sy = (skin ? SVY : RDY0 + (RDH0 - vh) / 2);
     sn = floor(clampv(slider(lastchg)) * 45 / 128);
+    sy += r1y;
     glowtxt(selsrcl(floor(sn / 9)), sx, sy, fresh);
     glowtxt("·", sx + 9 * cw, sy, fresh);
     glowtxt(selmod(floor(sn / 3) % 3), sx + 11 * cw, sy, fresh);
     glowtxt("·", sx + 21 * cw, sy, fresh);
     glowtxt(seleg(sn % 3), sx + 23 * cw, sy, fresh);
   ) : (
-    glowtxt(31, MG + RW - vw - S(16), MG + (READH - vh) / 2, fresh);
+    skin ? glowtxt(31, RX, SVY + r1y, fresh) : glowtxt(31, RVR - vw, RDY0 + (RDH0 - vh) / 2 + r1y, fresh);
   );
-  gfx_setfont(2, "Consolas", S(24)); gfx_measurestr(30, tw, th);
-  glowtxt(30, RX, MG + (READH - th) / 2, fresh);
+  rfont(2, skin ? S(18) : S(24)); gfx_measurestr(30, tw, th);
+  !skin && RX + tw + S(20) > RVR - vw ? (rfont(2, S(17)); gfx_measurestr(30, tw, th););   // too long: smaller, never overlapping
+  skin ? (rc(K_LBL, gte); txt(30, RX, SNY + r1y);) : glowtxt(30, RX, RDY0 + (RDH0 - th) / 2 + r1y, fresh);
 ) : lastchg < 0 ? (
-  lastchg == -3 ? strcpy(30, #rm) : sprintf(30, "PRESET LOADED · %d PARAMS", lastn);
-  glowtxt(30, RX, RY, fresh);
+  lastchg == -2 ? (
+    kitkind == 1 ? sprintf(30, "KIT · %s", #kn) :
+    kitkind == 2 ? sprintf(30, "KIT SAVED · %s", #kn) :
+    kitkind == 4 ? sprintf(30, "SOUND · %s", #kn) :
+    kitkind == 5 ? sprintf(30, "SOUND SAVED · %s", #kn) :
+    kitkind == 6 ? sprintf(30, "%s", #kn) :
+                   strcpy(30, "SENT ALL · WHOLE KIT TO VOLCA");
+  ) : lastchg == -3 ? strcpy(30, #rm) : sprintf(30, "KIT LOADED · %d PARAMS", lastn);
+  // v1.4.8.1: a message / tooltip too long for one line goes on two lines (split at the " · " nearest the middle), bright
+  tipon ? (fresh = 1;);
+  rw_ = RDX0 + RDW0 - S(16) - RX;
+  rfont(2, S(24)); gfx_measurestr(30, tw, th);
+  tw > rw_ ? (
+    n_ = strlen(30); bs_ = -1; bd_ = 100000; i = 1;
+    loop(max(0, n_ - 3), str_getchar(30, i) == 32 && str_getchar(30, i + 1) == 194 && abs(i - n_ / 2) < bd_ ? (bs_ = i; bd_ = abs(i - n_ / 2);); i += 1;);
+    bs_ > 0 ? (
+      strncpy(#l1, 30, bs_); strcpy_from(#l2, 30, bs_ + 4);
+      rfont(2, S(21)); gfx_measurestr(#l1, tw, th);
+      glowtxt(fit(#l1, rw_), RX, RDY0 + RDH0 / 2 - th - S(1) + r1y, fresh);
+      glowtxt(fit(#l2, rw_), RX, RDY0 + RDH0 / 2 + S(1) + r1y, fresh);
+    ) : (rfont(2, S(19)); gfx_measurestr(30, tw, th); glowtxt(fit(30, rw_), RX, RDY0 + (RDH0 - th) / 2 + r1y, fresh););
+  ) : glowtxt(30, RX, RDY0 + (RDH0 - th) / 2 + r1y, fresh);
 ) : (
-  col(AR, AG, AB, 0.35); txt("VOLCA DRUM", RX, RY);
+  rfont(2, S(24)); skin ? rc(K_DIM, 1) : rc(K_RDT, 0.35); gfx_measurestr("VOLCA DRUM", tw, th); txt("VOLCA DRUM", RX, RDY0 + (RDH0 - th) / 2);
 );
+gte = 1;
 
-// ---- send all button ----
-sbx = gfx_w - MG - SBW; sby = MG; sbw = SBW; sbh = READH - S(26);
-flash = max(0, 1 - (now - sendall_t) / 1.5);
-gfx_gradrect(sbx, sby, sbw, sbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / sbh, -0.059 / sbh, -0.063 / sbh, 0);
-flash > 0 ? (col(AR, AG, AB, 0.55 * flash); gfx_rect(sbx, sby, sbw, sbh););
-col(0.267, 0.286, 0.31, 1); frame(sbx, sby, sbw, sbh);
-gfx_setfont(4, "Bahnschrift", S(16), 'b');
-col(0.9, 0.91, 0.92, 1); ctxt(flash > 0 ? "SENT" : "SEND ALL", sbx, sby + (sbh - S(16)) / 2 - 1, sbw);
-// SOUND: menu with copy / paste part
-ssy = sby + sbh + S(4); ssw = SBW; ssh = READH - sbh - S(4);
-gfx_setfont(3, "Bahnschrift", S(11), 'b');
-gfx_gradrect(sbx, ssy, ssw, ssh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / ssh, -0.059 / ssh, -0.063 / ssh, 0);
-col(0.267, 0.286, 0.31, 1); frame(sbx, ssy, ssw, ssh);
-col(0.9, 0.91, 0.92, 1); ctxt("SOUND", sbx, ssy + (ssh - S(11)) / 2 - 1, ssw);
-// SOUND menu (opened by the mouse code at the end of the last frame)
-function sound_menu(x, y) local(sel) (
+// SOUND menu (opened by the mouse code at the end of the last frame).
+// A JSFX can't list a folder: the full list comes from the index file "Data\NH4X Volca\VolcaSounds index.txt"
+// (one name per line, written by the sound save script / shipped with a sound pack).
+IBASE = 200;   // string slots 200..449 = names from the index
+function readindex() local(h, n, c) (
+  n = 0;
+  (h = file_open("NH4X Volca/VolcaSounds index.txt")) >= 0 ? (
+    while (n < 250 && file_string(h, IBASE + n) > 0) (
+      // trim line end / trailing spaces
+      c = strlen(IBASE + n); while (c > 0 && str_getchar(IBASE + n, c - 1) <= 32) (c -= 1;); str_setlen(IBASE + n, c);
+      c > 0 && strncmp(IBASE + n, "NH4XVolca", 9) != 0 ? n += 1;   // skip header and empty lines
+    );
+    file_close(h);
+  );
+  n;
+);
+function sound_req(r) ( gmem[200] = fp; gmem[201] = r; save_req = 1; save_req_t = time_precise(); );
+function sound_menu(x, y) local(sel, n, k, m) (
+  n = readindex();
   fp == 6 ? strcpy(#mn, "#CLICK A PART FIRST") : (
-    sprintf(#mn, "COPY PART %d|", fp + 1);
-    cb_ok ? sprintf(#t2, "PASTE PART %d > PART %d", cb_from + 1, fp + 1) : strcpy(#t2, "#PASTE (COPY A PART FIRST)");
+    sprintf(#mn, "SAVE PART %d AS SOUND...|", fp + 1);
+    sprintf(#t2, "COPY PART %d|", fp + 1); strcat(#mn, #t2);
+    cb_ok ? sprintf(#t2, "PASTE PART %d > PART %d||", cb_from + 1, fp + 1) : strcpy(#t2, "#PASTE (COPY A PART FIRST)||");
     strcat(#mn, #t2);
+    sprintf(#t2, "#LOAD SOUND INTO PART %d", fp + 1); strcat(#mn, #t2);
+    n == 0 ? strcat(#mn, "|#(no sound index yet: save a sound once)");
+    k = 0; loop(n, strcat(#mn, "|"); strcat(#mn, IBASE + k); k += 1;);
+    strcat(#mn, "||RENAME SOUND...|DELETE SOUND...");
   );
   gfx_x = x; gfx_y = y;
   sel = gfx_showmenu(#mn);
-  fp != 6 ? (sel == 1 ? copypart() : sel == 2 ? pastepart(););
+  m = max(n, 1);   // menu items in the sound list (1 = the "no index" line)
+  fp != 6 ? (
+    sel == 1 ? sound_req(1) :
+    sel == 2 ? copypart() : sel == 3 ? pastepart() :
+    sel >= 5 && sel - 5 < n ? (sprintf(SBASE, "NH4X Volca/VolcaSounds/%s.txt", IBASE + sel - 5); loadsound(0);) :
+    sel == 5 + m ? sound_req(4) : sel == 6 + m ? sound_req(3);
+  );
 );
-open_menu == 1 ? sound_menu(sbx, ssy + ssh) : open_menu == 3 ? sound_menu(mouse_x, mouse_y);
+// SAVE / DELETE / RENAME: a JSFX can't write files. The flag gmem[201] (1 save, 3 delete, 4 rename) is answered by the
+// script "Volca sound (save)" running in the background (it sets the flag back to 0; delete/rename show their
+// own list at the mouse). Nobody answers within 1.5 s = script not running.
+save_req ? (
+  gmem[201] == 0 ? save_req = 0 :
+  now - save_req_t > 1.5 ? (
+    gmem[201] = 0; save_req = 0;
+    strcpy(#rm, "SOUND FILES · COME WITH THE SEQUENCER RELEASE"); msg();
+  );
+);
+open_menu == 1 ? sound_menu(ssx, ssy + ssh) : open_menu == 3 ? sound_menu(mouse_x, mouse_y) : open_menu == 4 ? thmenu();
 open_menu = 0;
 
-// ---- focus: the last touched part (or waveguide) lifts out of the rack ----
-// lp = focused part 0-5, 6 = waveguide; stays until another one is touched
+// ---- focus: the last touched part (or waveguide) ----
+// fp = focused part 0-5, 6 = waveguide; stays until another one is touched
 lastchg > 0 ? (fp = lastchg <= 132 ? floor((lastchg - 1) / 22) : 6;);
 fp != prevfp ? (prevfp = fp; fp_t = now;);
-lift = S(4) * min(1, (now - fp_t) / 0.12);
+lift = (skin ? 0 : S(4) * min(1, (now - fp_t) / 0.12));
 function drawfocus(x, y, w, h, l) (
-  col(0, 0, 0, 0.35); gfx_rect(x + S(2), y + l + S(3), w, h);          // shadow
-  col(0, 0, 0, 0.2);  gfx_rect(x + S(4), y + l + S(6), w, h);
-  col(AR, AG, AB, 0.10); frame(x - 3, y - 3, w + 6, h + 6);             // glow
-  col(AR, AG, AB, 0.28); frame(x - 2, y - 2, w + 4, h + 4);
-  col(0.155, 0.165, 0.18, 1); gfx_rect(x, y, w, h);                     // lighter panel
-  col(AR, AG, AB, 0.9); frame(x - 1, y - 1, w + 2, h + 2);
-  col(AR, AG, AB, 1); gfx_rect(x, y, w, S(3));
+  rc(K_BG2, 0.6); gfx_rect(x + S(2), y + l + S(3), w, h);          // shadow
+  rc(K_BG2, 0.4); gfx_rect(x + S(4), y + l + S(6), w, h);
+  rc(K_FOC, 0.10); frame(x - 3, y - 3, w + 6, h + 6);             // glow
+  rc(K_FOC, 0.28); frame(x - 2, y - 2, w + 4, h + 4);
+  rc(K_PNLF, 1); gfx_rect(x, y, w, h);                             // lighter panel
+  rc(K_FOC, 0.9); frame(x - 1, y - 1, w + 2, h + 2);
+  rc(K_FOC, 1); gfx_rect(x, y, w, S(3));
 );
 
 // ---- parts ----
-WGW = S(146);
+WGW = (skin ? S(150) : S(146));
 GAP = S(8);
-y0 = MG + READH + MG;
+y0 = HDB + (skin ? S(8) : MG);
 AREAW = gfx_w - WGW - 3 * MG;
 colw = floor((AREAW - 5 * GAP) / 6);
 AREAH = gfx_h - y0 - MG;
-HD1 = S(24); HD2 = S(16); SEP = S(12); PAD = S(6);
-rh = max(10, floor((AREAH - HD1 - HD2 - SEP - PAD) / 15));
-lw = S(34);
-bw2 = floor((colw - lw - 3 * PAD) / 2);
-LF = S(11);
 lp = fp;
-// row name = lock button for randomize (that row in this part, both layers). All cells locked: red chip
+// row name = lock button for randomize (that row in this part, both layers). All cells locked: amber chip
 function rowlab(nm, x, y, q, tint) (
   labx[nl] = x - S(2); laby[nl] = y; labq[nl] = p * 32 + q; nl += 1;
-  gfx_setfont(3, "Bahnschrift", LF, 'b');
+  skin ? sfont(3, S(11)) : gfx_setfont(3, "Bahnschrift", LF, 'b');
   rowlocked(p, q) ? (
-    col(LR, LG, LB, 0.22); gfx_rect(x - S(2), y + 2, lw - S(1), rh - 4);
-    col(LR, LG, LB, 1);
-  ) : tint ? col(0.73, 0.64, 0.84, 1) : col(0.6, 0.63, 0.65, 1);   // vdcf params tinted
-  txt(nm, x, y + (rh - LF) / 2);
+    rc(K_HOT, 0.22); gfx_rect(x - S(2), y + 2, lw - S(1), rh - 4);
+    rc(K_HOT, 1);
+  ) : tint ? rc(K_ALT, 1) : rc(K_LBL, 1);   // vdcf params tinted
+  txt(nm, x, skin ? y + S(3) : y + (rh - LF) / 2);
 );
-nl = 0;
-p = 0;
-loop(6,
-  cx = MG + p * (colw + GAP);
-  act = p == lp;
-  cy = act ? y0 - lift : y0;
-  act ? drawfocus(cx, cy, colw, AREAH, lift) : (
-    col(0.118, 0.125, 0.137, 1); gfx_rect(cx, cy, colw, AREAH);
-    col(0.184, 0.2, 0.216, 1); frame(cx, cy, colw, AREAH);
-    col(0.227, 0.243, 0.263, 1); gfx_rect(cx, cy, colw, S(2));
+nl = 0; nv = 0;
+!skin ? (
+  HD1 = S(24); HD2 = S(16); SEP = S(12); PAD = S(6);
+  rh = max(10, floor((AREAH - HD1 - HD2 - SEP - PAD) / 17));   // 9 layer rows (Select = SRC/MOD.T/EG.T) + 8 FX rows
+  lw = S(38);
+  bw2 = floor((colw - lw - 3 * PAD) / 2);
+  LF = CF(S(11));
+  p = 0;
+  loop(6,
+    cx = MG + p * (colw + GAP);
+    act = p == lp;
+    cy = act ? y0 - lift : y0;
+    act ? drawfocus(cx, cy, colw, AREAH, lift) : (
+      rc(K_PNL, 1); gfx_rect(cx, cy, colw, AREAH);
+      rc(K_PNLB, 1); frame(cx, cy, colw, AREAH);
+      rc(K_OVIN, 1); gfx_rect(cx, cy, colw, S(2));
+    );
+    // title = select / part lock (amber title + top edge when locked); then PLAY and LINK
+    lkw = S(36); lkh = S(16); lkx[p] = cx + colw - PAD - lkw; lky[p] = cy + S(7); lnkww = lkw; lnkhh = lkh;
+    ptx[p] = cx; pty[p] = cy; ptw[p] = lkx[p] - S(50) - cx; pthh[p] = HD1;
+    qx[p] = lkx[p] - S(48); qy[p] = lky[p];   // Q = QPI button
+    plock[p] ? (rc(K_HOT, 1); gfx_rect(cx, cy, colw, S(3)););
+    gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b');
+    plock[p] ? rc(K_HOT, 1) : act ? rc(K_TXT, 1) : rc(K_DIM, 1);
+    sprintf(32, "PART %d", p + 1); txt(fit(32, ptw[p] - PAD - S(2)), cx + PAD + S(1), cy + S(5));
+    tbtn(qx[p], qy[p], S(20), lkh, "Q", slider(151 + p) >= 0.5, S(11));
+    playbtn(p, lkx[p] - S(24), lky[p], S(20), lkh);
+    tbtn(lkx[p], lky[p], lkw, lkh, "LINK", slider(138 + p) >= 0.5, S(11));
+    gfx_setfont(3, "Bahnschrift", LF, 'b');
+    rc(K_ACC, 1); ctxt("L1", cx + lw + PAD, cy + HD1 + S(2), bw2);
+    rc(K_ALT, 1); ctxt("L2", cx + lw + 2 * PAD + bw2, cy + HD1 + S(2), bw2);
+    ry = cy + HD1 + HD2;
+    r = 0;
+    loop(7,
+      k = lord(r);
+      k == 0 ? (
+        // Select = three rows; every row name locks the whole Select row (as SEL did)
+        cq = 0;
+        loop(3,
+          rowlab(cq == 0 ? "SRC" : cq == 1 ? "MOD.T" : "EG.T", cx + PAD, ry, 0, 0);
+          drawsel(p * 22 + 1, cq, cx + lw + PAD, ry + 2, bw2, rh - 4, 1);
+          drawsel(p * 22 + 8, cq, cx + lw + 2 * PAD + bw2, ry + 2, bw2, rh - 4, 2);
+          ry += rh; cq += 1;
+        );
+      ) : (
+        rowlab(shortname(k), cx + PAD, ry, k, 0);
+        drawbar(p * 22 + 1 + k, cx + lw + PAD, ry + 2, bw2, rh - 4, 1);
+        drawbar(p * 22 + 8 + k, cx + lw + 2 * PAD + bw2, ry + 2, bw2, rh - 4, 2);
+        ry += rh;
+      );
+      r += 1;
+    );
+    rc(K_PNLB, 1); gfx_rect(cx + PAD, ry + SEP / 2, colw - 2 * PAD, 1);
+    ry += SEP;
+    r = 0;
+    loop(8,
+      mi = mord(r);
+      rowlab(pshort(mi), cx + PAD, ry, 7 + mi, mi >= 6);
+      drawbar(p * 22 + 15 + mi, cx + lw + PAD, ry + 2, colw - lw - 2 * PAD, rh - 4, 3);
+      ry += rh; r += 1;
+    );
+    p += 1;
   );
-  // title = part lock button (amber title + top edge when locked)
-  ptx[p] = cx; pty[p] = cy; ptw[p] = colw - S(36) - PAD; pth = HD1;
-  plock[p] ? (col(LR, LG, LB, 1); gfx_rect(cx, cy, colw, S(3)););
-  gfx_setfont(4, "Bahnschrift", S(17), 'b');
-  plock[p] ? col(LR, LG, LB, 1) : act ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
-  sprintf(32, "PART 0%d", p + 1); txt(32, cx + PAD + S(1), cy + S(6));
-  // LINK button
-  lkw = S(36); lkh = S(16); lkx[p] = cx + colw - PAD - lkw; lky[p] = cy + S(7); lkW = lkw; lkH = lkh;
-  slider(138 + p) >= 0.5 ? (
-    col(AR, AG, AB, 0.85); gfx_rect(lkx[p], lky[p], lkw, lkh);
-    col(1, 1, 1, 1);
-  ) : (
-    col(0.071, 0.075, 0.082, 1); gfx_rect(lkx[p], lky[p], lkw, lkh);
-    col(0.27, 0.29, 0.31, 1); frame(lkx[p], lky[p], lkw, lkh);
-    col(0.55, 0.58, 0.6, 1);
+) : (
+  // ---- Sleeve: outlined part number, L1 / L2 columns with a header, flat rows ----
+  NUMH = S(50); HDR = S(18); SEP = S(12);
+  lw = S(36); LF = S(11);
+  bw2 = floor((colw - lw - S(4)) / 2);
+  rh = max(12, floor((y0 + AREAH - (y0 + NUMH + S(4) + HDR + S(5)) - SEP) / 17));
+  p = 0;
+  loop(6,
+    cx = MG + p * (colw + GAP);
+    act = p == lp;
+    p < 5 ? (rc(K_LINE, 1); gfx_rect(cx + colw + GAP / 2 - S(1), y0, S(2), AREAH););
+    act ? (rc(K_FOC, 1); gfx_rect(cx, y0, colw, NUMH););
+    plock[p] ? (rc(K_HOT, 1); gfx_rect(cx, y0, colw, S(4)););
+    sfont(1, S(42)); sprintf(32, "%02d", p + 1); gfx_measurestr(32, tw, th);
+    act ? (plock[p] ? rc(K_HOT, 1) : rc(K_FOCT, 1); txt(32, cx + S(4), y0 + (NUMH - th) / 2);) : otxt(32, cx + S(4), y0 + (NUMH - th) / 2, max(1, S(1)));
+    lkw = S(42); lkh = S(20); lkx[p] = cx + colw - lkw - S(3); lky[p] = y0 + S(3); lnkww = lkw; lnkhh = lkh;
+    ptx[p] = cx; pty[p] = y0; ptw[p] = colw - lkw - S(32); pthh[p] = NUMH;
+    qx[p] = lkx[p] - S(24); qy[p] = lky[p];   // Q = QPI button, left of LINK (hit test uses S(20) x lnkhh)
+    tbtn(qx[p], qy[p], S(20), lkh, "Q", slider(151 + p) >= 0.5, S(13));
+    tbtn(lkx[p], lky[p], lkw, lkh, "LINK", slider(138 + p) >= 0.5, S(13));
+    playbtn(p, lkx[p], lky[p] + lkh + S(4), lkw, lkh);
+    act ? (rc(K_FOCT, 1); frame(plx[p], ply[p], lkw, lkh);) : 0;
+    // L1 / L2 header
+    hy = y0 + NUMH + S(4);
+    sfont(3, S(12));
+    rc(K_ACC, 1); rtxt("L1", cx + lw + bw2 - S(4), hy);
+    rc(K_PLY, 1); rtxt("L2", cx + lw + S(4) + 2 * bw2 - S(4), hy);
+    rc(K_PLY, 1); gfx_rect(cx, hy + HDR, colw, S(3));
+    ry = hy + HDR + S(5);
+    r = 0;
+    loop(7,
+      k = lord(r);
+      k == 0 ? (
+        cq = 0;
+        loop(3,
+          rowlab(cq == 0 ? "SRC" : cq == 1 ? "MOD.T" : "EG.T", cx, ry, 0, 0);
+          drawsel(p * 22 + 1, cq, cx + lw, ry, bw2, rh - 1, 1);
+          drawsel(p * 22 + 8, cq, cx + lw + S(4) + bw2, ry, bw2, rh - 1, 2);
+          rc(K_LINE2, 1); gfx_rect(cx, ry + rh - 1, colw, 1);
+          ry += rh; cq += 1;
+        );
+      ) : (
+        rowlab(shortname(k), cx, ry, k, 0);
+        drawbar(p * 22 + 1 + k, cx + lw, ry, bw2, rh - 1, 1);
+        drawbar(p * 22 + 8 + k, cx + lw + S(4) + bw2, ry, bw2, rh - 1, 2);
+        rc(K_LINE2, 1); gfx_rect(cx, ry + rh - 1, colw, 1);
+        ry += rh;
+      );
+      r += 1;
+    );
+    rc(K_PLY, 1); gfx_rect(cx, ry + SEP / 2 - S(2), colw, S(4));
+    ry += SEP;
+    r = 0;
+    loop(8,
+      mi = mord(r); ii = p * 22 + 15 + mi;
+      // last touched FX row: whole row in the focus color
+      ii == lastchg && now - lastchg_t < 4 ? (rc(K_FOC, 1); gfx_rect(cx, ry, colw, rh - 1);
+        sfont(3, S(11)); rc(K_FOCT, 1); txt(pshort(mi), cx, ry + S(3));
+        bx[ii] = cx + lw; by[ii] = ry; bw[ii] = colw - lw; bh[ii] = rh - 1;
+        fmtval(ii, clampv(slider(ii)), 20); sfont(5, S(14)); gfx_measurestr(20, tw, th); txt(20, cx + colw - tw - S(2), ry + (rh - S(3) - th) / 2);
+        labx[nl] = cx - S(2); laby[nl] = ry; labq[nl] = p * 32 + 7 + mi; nl += 1;
+      ) : (
+        rowlab(pshort(mi), cx, ry, 7 + mi, mi >= 6);
+        drawbar(ii, cx + lw, ry, colw - lw, rh - 1, 3);
+      );
+      rc(K_LINE2, 1); gfx_rect(cx, ry + rh - 1, colw, 1);
+      ry += rh; r += 1;
+    );
+    p += 1;
   );
-  gfx_setfont(3, "Bahnschrift", S(10), 'b'); ctxt("LINK", lkx[p], lky[p] + (lkh - S(10)) / 2 - 1, lkw);
-  gfx_setfont(3, "Bahnschrift", LF, 'b');
-  col(AR, AG, AB, 1); ctxt("L1", cx + lw + PAD, cy + HD1 + S(2), bw2);
-  col(0.62, 0.70, 0.77, 1); ctxt("L2", cx + lw + 2 * PAD + bw2, cy + HD1 + S(2), bw2);
-  ry = cy + HD1 + HD2;
-  r = 0;
-  loop(7,
-    k = lord(r);
-    rowlab(shortname(k), cx + PAD, ry, k, 0);
-    drawbar(p * 22 + 1 + k, cx + lw + PAD, ry + 2, bw2, rh - 4, 1);
-    drawbar(p * 22 + 8 + k, cx + lw + 2 * PAD + bw2, ry + 2, bw2, rh - 4, 2);
-    ry += rh; r += 1;
-  );
-  col(0.2, 0.216, 0.235, 1); gfx_rect(cx + PAD, ry + SEP / 2, colw - 2 * PAD, 1);
-  ry += SEP;
-  r = 0;
-  loop(8,
-    mi = mord(r);
-    rowlab(pshort(mi), cx + PAD, ry, 7 + mi, mi >= 6);
-    drawbar(p * 22 + 15 + mi, cx + lw + PAD, ry + 2, colw - lw - 2 * PAD, rh - 4, 3);
-    ry += rh; r += 1;
-  );
-  p += 1;
 );
 
-// ---- waveguide ----
+// ---- waveguide / random / morph column ----
 wx = gfx_w - MG - WGW;
 wact = fp == 6;
-wy = wact ? y0 - lift : y0;
-wact ? drawfocus(wx, wy, WGW, AREAH, lift) : (
-  col(0.118, 0.125, 0.137, 1); gfx_rect(wx, wy, WGW, AREAH);
-  col(0.184, 0.2, 0.216, 1); frame(wx, wy, WGW, AREAH);
-  col(0.227, 0.243, 0.263, 1); gfx_rect(wx, wy, WGW, S(2));
-);
-ptx[6] = wx; pty[6] = wy; ptw[6] = WGW;
-plock[6] ? (col(LR, LG, LB, 1); gfx_rect(wx, wy, WGW, S(3)););
-gfx_setfont(4, "Bahnschrift", S(15), 'b');
-plock[6] ? col(LR, LG, LB, 1) : wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
-txt("WAVEGUIDE", wx + S(9), wy + S(8));
-ry = wy + S(38);
-wi = 0;
-loop(4,
-  gfx_setfont(3, "Bahnschrift", LF, 'b'); col(0.6, 0.63, 0.65, 1); txt(wlong(wi), wx + S(9), ry);
-  drawbar(133 + wi, wx + S(9), ry + S(15), WGW - S(18), S(20), 4);
-  ry += S(48); wi += 1;
-);
-// ---- random ----
-rdx = wx + S(9); rwd = WGW - S(18);
-ry0 = wy + S(242);
-col(0.2, 0.216, 0.235, 1); gfx_rect(rdx, ry0 - S(10), rwd, 1);
-gfx_setfont(4, "Bahnschrift", S(15), 'b');
-wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
-txt("RANDOM", rdx, ry0);
-sgw = floor((rwd - S(4)) / 2); sgh = S(20);
-q = 0;
-loop(4,
-  sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(24) + floor(q / 2) * (sgh + S(4));
-  floor(slider(145) + 0.5) == q ? (
-    col(AR, AG, AB, 0.85); gfx_rect(sgx[q], sgy[q], sgw, sgh); col(1, 1, 1, 1);
-  ) : (
-    col(0.071, 0.075, 0.082, 1); gfx_rect(sgx[q], sgy[q], sgw, sgh);
-    col(0.27, 0.29, 0.31, 1); frame(sgx[q], sgy[q], sgw, sgh); col(0.6, 0.63, 0.65, 1);
+function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20)); rc(K_TXT, 1); txt(s, wx, y + S(6)); );
+!skin ? (
+  wy = wact ? y0 - lift : y0;
+  wact ? drawfocus(wx, wy, WGW, AREAH, lift) : (
+    rc(K_PNL, 1); gfx_rect(wx, wy, WGW, AREAH);
+    rc(K_PNLB, 1); frame(wx, wy, WGW, AREAH);
+    rc(K_OVIN, 1); gfx_rect(wx, wy, WGW, S(2));
   );
-  gfx_setfont(3, "Bahnschrift", S(11), 'b');
-  ctxt(q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", sgx[q], sgy[q] + (sgh - S(11)) / 2 - 1, sgw);
-  q += 1;
+  ptx[6] = wx; pty[6] = wy; ptw[6] = WGW; pthh[6] = S(24);
+  plock[6] ? (rc(K_HOT, 1); gfx_rect(wx, wy, WGW, S(3)););
+  gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b');
+  plock[6] ? rc(K_HOT, 1) : wact ? rc(K_TXT, 1) : rc(K_DIM, 1);
+  txt("WAVEGUIDE", wx + S(9), wy + S(6));
+  ry = wy + S(36);
+  wi = 0;
+  loop(4,
+    gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); txt(wlong(wi), wx + S(9), ry);
+    drawbar(133 + wi, wx + S(9), ry + S(16), WGW - S(18), S(20), 4);
+    ry += S(48); wi += 1;
+  );
+  rdx = wx + S(9); rwd = WGW - S(18);
+  ry0 = wy + S(240);
+  rc(K_PNLB, 1); gfx_rect(rdx, ry0 - S(10), rwd, 1);
+  gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b'); wact ? rc(K_TXT, 1) : rc(K_DIM, 1); txt("RANDOM", rdx, ry0 - S(2));
+  sgw = floor((rwd - S(4)) / 2); sgh = S(20);
+  q = 0;
+  loop(4,
+    sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(22) + floor(q / 2) * (sgh + S(4));
+    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", floor(slider(145) + 0.5) == q, S(11));
+    q += 1;
+  );
+  gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_LBL, 1); txt("AMOUNT", rdx, ry0 + S(72));
+  amx = rdx; amy = ry0 + S(89); amw = rwd; amh = S(20);
+  rc(K_FLD, 1); gfx_rect(amx, amy, amw, amh);
+  rc(K_ACC, 0.72); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
+  rc(K_CELB, 1); frame(amx - 1, amy - 1, amw + 2, amh + 2);
+  gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th);
+  rc(K_TXT, 0.95); txt(20, amx + amw - tw - S(3), amy + (amh - th) / 2);
+  rbx = rdx; rby = ry0 + S(119); rbw = sgw; rbh = S(32); ubx = rdx + sgw + S(4);
+  rflash = max(0, 1 - (now - roll_t) / 1.0);
+  gbtn(rbx, rby, rbw, rbh); rflash > 0 ? (rc(K_ACC, 0.55 * rflash); gfx_rect(rbx, rby, rbw, rbh););
+  gbtn(ubx, rby, rbw, rbh);
+  gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b');
+  rc(K_TXT, 1); ctxt("ROLL", rbx, rby + (rbh - CF(S(15))) / 2 - 1, rbw);
+  undo_ok ? rc(K_TXT, 1) : rc(K_DIM2, 1);
+  ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - CF(S(15))) / 2 - 1, rbw);
+  mo0 = ry0 + S(166);
+  rc(K_PNLB, 1); gfx_rect(rdx, mo0 - S(10), rwd, 1);
+  gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b'); wact ? rc(K_TXT, 1) : rc(K_DIM, 1); txt("MORPH", rdx, mo0 - S(2));
+  mbh = S(22); mby_a = mo0 + S(22); mby_b = mby_a + mbh + S(4);
+  mm = slider(148) / 100;
+  q = 0;
+  loop(2,
+    yy = q ? mby_b : mby_a;
+    rc(K_FLD, 1); gfx_rect(rdx, yy, rwd, mbh); rc(K_FLDB, 1); frame(rdx, yy, rwd, mbh);
+    (q ? mb_ok : ma_ok) ? (rc(K_ACC, q ? mm : 1 - mm); gfx_rect(rdx, yy, max(2, S(3)), mbh););   // which end is closer
+    gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b');
+    q ? (mb_ok ? (sprintf(33, "B · %s", #nb); rc(K_TXT, 1);) : (strcpy(33, "SET B"); rc(K_LBL, 1);))
+      : (ma_ok ? (sprintf(33, "A · %s", #na); rc(K_TXT, 1);) : (strcpy(33, "SET A"); rc(K_LBL, 1);));
+    txt(33, rdx + S(9), yy + (mbh - CF(S(11))) / 2 - 1);
+    q += 1;
+  );
+  mox = rdx; moy = mby_b + mbh + S(6); mow = rwd; moh = S(20);
+  rc(K_FLD, 1); gfx_rect(mox, moy, mow, moh);
+  rc(K_ACC, 0.72); gfx_rect(mox, moy, max(1, mm * mow), moh);
+  rc(K_CELB, 1); frame(mox - 1, moy - 1, mow + 2, moh + 2);
+  gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
+  rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
+  gfx_setfont(4, "Bahnschrift", S(12), 'b');
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5", wx + S(9), gfx_h - MG - S(16));
+) : (
+  // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
+  SLW = S(62);   // label column
+  wy = y0;
+  shead("WAVE GUIDE", wy);
+  ptx[6] = wx; pty[6] = wy; ptw[6] = WGW; pthh[6] = S(32);
+  plock[6] ? (rc(K_HOT, 1); gfx_rect(wx, wy, WGW, S(4)););
+  wact ? (rc(K_FOC, 1); gfx_rect(wx, wy + S(32), WGW, S(2)););
+  ry = wy + S(36);
+  drawbar(133, wx, ry, WGW, S(26), 4);
+  ry += S(32);
+  wi = 1;
+  loop(3,
+    sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("D", tw, th); txt(wlong(wi), wx, ry + (S(28) - th) / 2);
+    drawbar(133 + wi, wx + SLW, ry, WGW - SLW, S(28), 4);
+    rc(K_LINE2, 1); gfx_rect(wx, ry + S(28), WGW, 1);
+    ry += S(31); wi += 1;
+  );
+  rdx = wx; rwd = WGW;
+  ry0 = ry + S(12);
+  shead("RANDOM", ry0);
+  sgw = floor((rwd - S(4)) / 2); sgh = S(26);
+  q = 0;
+  loop(4,
+    sgx[q] = rdx + (q % 2) * (sgw + S(4)); sgy[q] = ry0 + S(36) + floor(q / 2) * (sgh + S(4));
+    tbtn(sgx[q], sgy[q], sgw, sgh, q == 0 ? "PART" : q == 1 ? "LAYER 1" : q == 2 ? "LAYER 2" : "KIT", floor(slider(145) + 0.5) == q, S(14));
+    q += 1;
+  );
+  amx = rdx + SLW; amy = ry0 + S(98); amw = rwd - SLW; amh = S(28);
+  sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("AMOUNT", rdx, amy + (amh - th) / 2);
+  rc(K_BAR, 0.6); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
+  sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th); rtxt(20, amx + amw - S(4), amy + (amh - th) / 2);
+  rbx = rdx; rby = amy + amh + S(8); rbw = sgw; rbh = S(34); ubx = rdx + sgw + S(4);
+  rflash = max(0, 1 - (now - roll_t) / 1.0);
+  rflash > 0 ? rc(K_ACC, 1) : rc(K_PLY, 1); gfx_rect(rbx, rby, rbw, rbh);
+  undo_ok ? rc(K_PLY, 1) : rc(K_LINE, 1); gfx_rect(ubx, rby, rbw, rbh);
+  sfont(4, S(18)); rc(K_BG2, 1);
+  ctxt("ROLL", rbx, rby + (rbh - S(18) * SFK) / 2, rbw); ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - S(18) * SFK) / 2, rbw);
+  mo0 = rby + rbh + S(14);
+  shead("MORPH", mo0);
+  mbh = S(28); mby_a = mo0 + S(36); mby_b = mby_a + mbh + S(4);
+  mm = slider(148) / 100;
+  q = 0;
+  loop(2,
+    yy = q ? mby_b : mby_a;
+    (q ? mb_ok : ma_ok) ? (rc(K_PLY, 1); gfx_rect(rdx, yy, rwd, mbh); rc(K_ACC, 1); gfx_rect(rdx, yy, S(4), mbh); rc(K_BG2, 1);)
+                        : (rc(K_PLY, 1); frame2(rdx, yy, rwd, mbh, S(2)););
+    sfont(3, S(14));
+    q ? (mb_ok ? sprintf(33, "B · %s", #nb) : strcpy(33, "SET B")) : (ma_ok ? sprintf(33, "A · %s", #na) : strcpy(33, "SET A"));
+    gfx_measurestr("A", tw, th); txt(fit(33, rwd - S(14)), rdx + S(9), yy + (mbh - th) / 2);
+    q += 1;
+  );
+  mox = rdx + SLW; moy = mby_b + mbh + S(6); mow = rwd - SLW; moh = S(28);
+  sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
+  rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
+  sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5", wx, gfx_h - MG - S(14));
 );
-gfx_setfont(3, "Bahnschrift", LF, 'b'); col(0.6, 0.63, 0.65, 1); txt("AMOUNT", rdx, ry0 + S(74));
-amx = rdx; amy = ry0 + S(89); amw = rwd; amh = S(20);
-col(0.071, 0.075, 0.082, 1); gfx_rect(amx, amy, amw, amh);
-col(AR, AG, AB, 0.72); gfx_rect(amx, amy, max(1, slider(144) / 100 * amw), amh);
-col(0.17, 0.18, 0.2, 1); frame(amx - 1, amy - 1, amw + 2, amh + 2);
-gfx_setfont(5, "Consolas", S(14)); sprintf(20, "%d%%", slider(144)); gfx_measurestr(20, tw, th);
-col(0.95, 0.95, 0.96, 0.95); txt(20, amx + amw - tw - S(3), amy + (amh - th) / 2);
-// ROLL + UNDO buttons
-rbx = rdx; rby = ry0 + S(119); rbw = sgw; rbh = S(32); ubx = rdx + sgw + S(4);
-rflash = max(0, 1 - (now - roll_t) / 1.0);
-gfx_gradrect(rbx, rby, rbw, rbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / rbh, -0.059 / rbh, -0.063 / rbh, 0);
-rflash > 0 ? (col(AR, AG, AB, 0.55 * rflash); gfx_rect(rbx, rby, rbw, rbh););
-col(0.267, 0.286, 0.31, 1); frame(rbx, rby, rbw, rbh);
-gfx_gradrect(ubx, rby, rbw, rbh, 0.204, 0.22, 0.239, 1, 0, 0, 0, 0, -0.055 / rbh, -0.059 / rbh, -0.063 / rbh, 0);
-col(0.267, 0.286, 0.31, 1); frame(ubx, rby, rbw, rbh);
-gfx_setfont(4, "Bahnschrift", S(15), 'b');
-col(0.9, 0.91, 0.92, 1); ctxt("ROLL", rbx, rby + (rbh - S(15)) / 2 - 1, rbw);
-undo_ok ? col(0.9, 0.91, 0.92, 1) : col(0.4, 0.42, 0.45, 1);
-ctxt(undone ? "REDO" : "UNDO", ubx, rby + (rbh - S(15)) / 2 - 1, rbw);
-
-// ---- morph (help texts moved to the vault note "Volca Drum - Panel Setup") ----
-mo0 = ry0 + S(164);
-col(0.2, 0.216, 0.235, 1); gfx_rect(rdx, mo0 - S(10), rwd, 1);
-gfx_setfont(4, "Bahnschrift", S(15), 'b');
-wact ? col(0.97, 0.97, 0.98, 1) : col(0.55, 0.58, 0.6, 1);
-txt("MORPH", rdx, mo0);
-mbh = S(22); mby_a = mo0 + S(22); mby_b = mby_a + mbh + S(4);
-mm = slider(148) / 100;
-q = 0;
-loop(2,
-  yy = q ? mby_b : mby_a;
-  col(0.071, 0.075, 0.082, 1); gfx_rect(rdx, yy, rwd, mbh);
-  col(0.27, 0.29, 0.31, 1); frame(rdx, yy, rwd, mbh);
-  (q ? mb_ok : ma_ok) ? (col(AR, AG, AB, q ? mm : 1 - mm); gfx_rect(rdx, yy, max(2, S(3)), mbh););   // which end is closer
-  gfx_setfont(3, "Bahnschrift", S(11), 'b');
-  q ? (mb_ok ? (sprintf(33, "B · %s", #nb); col(0.9, 0.91, 0.92, 1);) : (strcpy(33, "SET B"); col(0.6, 0.63, 0.65, 1);))
-    : (ma_ok ? (sprintf(33, "A · %s", #na); col(0.9, 0.91, 0.92, 1);) : (strcpy(33, "SET A"); col(0.6, 0.63, 0.65, 1);));
-  txt(33, rdx + S(9), yy + (mbh - S(11)) / 2 - 1);
-  q += 1;
-);
-mox = rdx; moy = mby_b + mbh + S(6); mow = rwd; moh = S(20);
-col(0.071, 0.075, 0.082, 1); gfx_rect(mox, moy, mow, moh);
-col(AR, AG, AB, 0.72); gfx_rect(mox, moy, max(1, mm * mow), moh);
-col(0.17, 0.18, 0.2, 1); frame(mox - 1, moy - 1, mow + 2, moh + 2);
-gfx_setfont(5, "Consolas", S(14)); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
-col(0.95, 0.95, 0.96, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
-
-gfx_setfont(4, "Bahnschrift", S(12), 'b');
-col(0.365, 0.384, 0.412, 1); txt("NH4X · VOLCA DRUM", wx + S(9), gfx_h - MG - S(16));
 
 // ---- mouse ----
 function hit(x, y) local(i, r) (
@@ -847,26 +1456,82 @@ function hit(x, y) local(i, r) (
   r;
 );
 
-function inr(x, y, w, h) ( mouse_x >= x && mouse_x < x + w && mouse_y >= y && mouse_y < y + h );
+// split Select cell under the mouse: index + 1, or 0
+function vhit(x, y) local(j, r) (
+  r = 0; j = 0;
+  loop(nv, !r && x >= vsx[j] && x < vsx[j] + vsw[j] && y >= vsy[j] && y < vsy[j] + vsh[j] ? (r = j + 1;); j += 1;);
+  r;
+);
 function setamt(v) ( slider(144) = max(0, min(100, floor(v + 0.5))); slider_automate(slider(144)); );
 function setmorph(v) (
   v = max(0, min(100, floor(v + 0.5)));
   v != slider(148) ? (slider(148) = v; slider_automate(slider(148)); last_morph = v; domorph(););
 );
 
+// ---- TOOLTIPS (v1.4.8): rest the mouse 1 s on a control = what it does in the readout; leaving brings the old display back ----
+function ptip(h, sub) local(p_, k_, o_, mi_) (   // v1.4.9.1: full name; a few words only where the name is not enough; no match = no tip
+  h == 1 ? strcpy(#rm, "LOOK · CLASSIC / SLEEVE")
+  : h == 2 ? sprintf(#rm, "COLOR · %s", thname(theme))
+  : h >= 10 && h <= 15 ? strcpy(#rm, "Q · QPI: chromatic notes, follows PIT in the sequencer")
+  : h >= 20 && h <= 25 ? sprintf(#rm, "TEST HIT · PART %d", h - 19)
+  : h >= 40 && h <= 45 ? strcpy(#rm, "LINK · layer 1 + layer 2 together")
+  : h == 50 ? strcpy(#rm, "SEND ALL · whole kit to the Volca")
+  : h == 51 ? strcpy(#rm, "SOUND · save / load / copy / paste a part")
+  : h == 60 ? strcpy(#rm, "ROW LOCK · stays on ROLL + MORPH")
+  : h == 82 ? strcpy(#rm, "UNDO · last roll / paste / sound load")
+  : h == 85 ? strcpy(#rm, "MORPH · blend A > B")
+
+  : h == 100 && sub == 135 ? strcpy(#rm, "WAVEGUIDE BODY · tone of the resonance")   // bars: the click shows the name, no tip
+);
+hb_ = hit(mouse_x, mouse_y);
+qh_ = -1; q = 0; loop(6, inr(qx[q], qy[q], S(20), lnkhh) ? (qh_ = q;); q += 1;);
+ph_ = -1; q = 0; loop(6, inr(plx[q], ply[q], plw, plh) ? (ph_ = q;); q += 1;);
+pt_ = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? (pt_ = q;); q += 1;);
+lh_ = -1; q = 0; loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? (lh_ = q;); q += 1;);
+lq_ = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (lq_ = labq[q];); q += 1;);
+sg_ = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? (sg_ = q;); q += 1;);
+tlh = lkhit ? 1 : clhit ? 2 : qh_ >= 0 ? 10 + qh_ : ph_ >= 0 ? 20 + ph_ : pt_ >= 0 && hb_ == 0 ? 30 + pt_ : lh_ >= 0 ? 40 + lh_
+    : inr(sbx, sby, sbw, sbh) ? 50 : inr(ssx, ssy, ssw, ssh) ? 51 : lq_ >= 0 ? 60 + 1000 * (lq_ + 2) : sg_ >= 0 ? 70 + sg_
+    : inr(amx, amy, amw, amh) ? 80 : inr(rbx, rby, rbw, rbh) ? 81 : inr(ubx, rby, rbw, rbh) ? 82
+    : inr(rdx, mby_a, rwd, mbh) ? 83 : inr(rdx, mby_b, rwd, mbh) ? 84 : inr(mox, moy, mow, moh) ? 85
+    : hb_ > 0 ? 100 + 1000 * (hb_ + 2) : 0;
+tlh != lasttlh ? (
+  tipon && lastchg == -3 && lastchg_t == tipt ? (lastchg = tsvlc; lastchg_t = tsvt; strcpy(#rm, #rmsv););   // back to what was there
+  tipon = 0; tipdone = 0; tipst = now; lasttlh = tlh;
+);
+abs(mouse_x - tmx) > 3 || abs(mouse_y - tmy) > 3 ? (tmx = mouse_x; tmy = mouse_y; !tipdone ? (tipst = now;););   // the mouse has to be still
+tlh && !tipdone && now - tipst >= 1 && !(mouse_cap & 3) && tlen == 0 ? (
+  tsvlc = lastchg; tsvt = lastchg_t; strcpy(#rmsv, #rm);
+  strcpy(#rm, ""); ptip(tlh % 1000, floor(tlh / 1000) - 2);
+  strlen(#rm) ? (lastchg = -3; lastchg_t = now; tipt = now; tipon = 1;) : strcpy(#rm, #rmsv); tipdone = 1;   // no text = no tip
+);
+tipon && lastchg == -3 && lastchg_t == tipt ? (lastchg_t = now; tipt = now;) : (tipon = 0;);
+
 mouse_cap & 1 ? (
   !mdown ? (
     mdown = 1;
     lhit = -1; q = 0;
-    loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lkW && mouse_y >= lky[q] && mouse_y < lky[q] + lkH ? lhit = q; q += 1;);
+    loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? lhit = q; q += 1;);
     lq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? lq = labq[q]; q += 1;);
     sq = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? sq = q; q += 1;);
     ah_i = mouse_cap & 8 ? hit(mouse_x, mouse_y) : 0;   // Shift+click on a bar = lock/unlock that cell
-    tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pth) ? tq = q; q += 1;);
+    mouse_cap & 8 && ah_i == 0 ? (vj = vhit(mouse_x, mouse_y); vj > 0 ? (ah_i = vsi[vj - 1];););   // split Select: whole Select cell
+    tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? tq = q; q += 1;);
+    phit = -1; q = 0; loop(6, inr(plx[q], ply[q], plw, plh) ? (phit = q;); q += 1;);
+    qhit = -1; q = 0; loop(6, inr(qx[q], qy[q], S(20), lnkhh) ? (qhit = q;); q += 1;);
     // part title: click = select that part (focus), Shift+click = part lock; right-click = SOUND menu (below)
-    tq >= 0 && ah_i == 0 ? (
+    lkhit ? (
+      setlook(!skin); drag = 0;
+    ) : clhit ? (
+      open_menu = 4; drag = 0;
+    ) : qhit >= 0 ? (
+      slider(151 + qhit) = slider(151 + qhit) >= 0.5 ? 0 : 1; slider_automate(slider(151 + qhit));
+      sprintf(#rm, "PART %d · QPI %s · CC 53", qhit + 1, slider(151 + qhit) >= 0.5 ? "ON · plays notes chromatically" : "OFF"); msg(); drag = 0;
+    ) : phit >= 0 ? (
+      aud[phit] = 1; audt[phit] = now; drag = 0;
+    ) : tq >= 0 && ah_i == 0 ? (
       mouse_cap & 8 ? (plock[tq] = !plock[tq]; slider_automate(slider(144));) : (
-        fp = tq;
+        fp = tq; gmem[200] = fp;
         tq == 6 ? strcpy(#rm, "WAVEGUIDE") : sprintf(#rm, "PART %d", tq + 1); msg();
       );
       drag = 0;
@@ -876,7 +1541,7 @@ mouse_cap & 1 ? (
       slider(138 + lhit) = slider(138 + lhit) >= 0.5 ? 0 : 1; slider_automate(slider(138 + lhit)); drag = 0;
     ) : mouse_x >= sbx && mouse_x < sbx + sbw && mouse_y >= sby && mouse_y < sby + sbh ? (
       sendall(); drag = 0;
-    ) : inr(sbx, ssy, ssw, ssh) ? (
+    ) : inr(ssx, ssy, ssw, ssh) ? (
       open_menu = 1; drag = 0;
     ) : lq >= 0 ? (
       togglerow(floor(lq / 32), lq % 32); slider_automate(slider(144)); drag = 0;   // automate = project gets "changed"
@@ -894,6 +1559,14 @@ mouse_cap & 1 ? (
       setab(1); drag = 0;
     ) : inr(mox, moy, mow, moh) ? (
       drag = -11;
+    ) : (vj = vhit(mouse_x, mouse_y)) > 0 ? (
+      // split Select: click/drag = the segment under the mouse; double-click = first option
+      vd = vj - 1;
+      -vj == lastclick_i && now - lastclick_t < 0.35 ? (
+        setcomp(vsi[vd], vsc[vd], 0); lastclick_t = -1; drag = 0;
+      ) : (
+        lastclick_i = -vj; lastclick_t = now; drag = -20;
+      );
     ) : (
       drag = hit(mouse_x, mouse_y);
       // double-click on the same bar = default value
@@ -911,6 +1584,8 @@ mouse_cap & 1 ? (
     issel(drag) ? setparam(drag, selval(sel_n0 + floor((mouse_x - sel_x0) / S(10)))) :
     drag == 133 ? setparam(drag, mouse_x < bx[drag] + bw[drag] / 2 ? 0 : 127)
                 : setparam(drag, (mouse_x - bx[drag]) / bw[drag] * 127);
+  ) : drag == -20 ? (
+    setcomp(vsi[vd], vsc[vd], (mouse_x - vsx[vd]) / vsw[vd] * ncomp(vsc[vd]));
   ) : drag == -10 ? (
     setamt((mouse_x - amx) / amw * 100);
   ) : drag == -11 ? (
@@ -926,12 +1601,14 @@ mouse_cap & 2 ? (
   !rdown ? (
     rdown = 1;
     rh_i = hit(mouse_x, mouse_y);
+    rh_i == 0 ? (vj = vhit(mouse_x, mouse_y); vj > 0 ? (rh_i = vsi[vj - 1];););   // split Select: lock the whole Select cell
     rq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? rq = labq[q]; q += 1;);
-    rt = -1; q = 0; loop(6, inr(ptx[q], pty[q], ptw[q], pth) ? rt = q; q += 1;);
+    rt = -1; q = 0; loop(6, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? rt = q; q += 1;);
+    clhit ? (open_menu = 4;) :
     rh_i > 0 ? (lockm[rh_i] = !lockm[rh_i]; slider_automate(slider(144));) :
     rq >= 0 ? (togglerowall(rq % 32); slider_automate(slider(144));) :
     rt >= 0 ? (
-      fp = rt; sprintf(#rm, "PART %d", fp + 1); msg(); open_menu = 3;
+      fp = rt; gmem[200] = fp; sprintf(#rm, "PART %d", fp + 1); msg(); open_menu = 3;
     );
   );
 ) : (rdown = 0;);
@@ -941,7 +1618,11 @@ mouse_wheel != 0 ? (
   hv > 0 ? (
     issel(hv) ? setparam(hv, selval(selnum(slider(hv)) + (mouse_wheel > 0 ? 1 : -1)))   // Select: one combination per notch
               : setparam(hv, slider(hv) + (mouse_wheel > 0 ? 1 : -1));
+  ) : (vj = vhit(mouse_x, mouse_y)) > 0 ? (
+    // split Select: one option per notch, only this part of Select
+    setcomp(vsi[vj - 1], vsc[vj - 1], getcomp(vsi[vj - 1], vsc[vj - 1]) + (mouse_wheel > 0 ? 1 : -1));
   ) :
+  clhit ? settheme(theme + (mouse_wheel > 0 ? 1 : -1)) :
   inr(amx, amy, amw, amh) ? setamt(slider(144) + (mouse_wheel > 0 ? 5 : -5)) :
   inr(mox, moy, mow, moh) ? setmorph(slider(148) + (mouse_wheel > 0 ? 5 : -5));
   mouse_wheel = 0;
@@ -953,7 +1634,7 @@ while (c > 0) (
   c >= 48 && c <= 57 ? (
     tlen == 0 ? (
       tparam = hit(mouse_x, mouse_y);
-      tparam == 0 ? tparam = lastchg;
+      tparam == 0 ? (vj = vhit(mouse_x, mouse_y); tparam = vj > 0 ? vsi[vj - 1] : lastchg;);   // split Select: raw 0-127
       tval = 0;
     );
     tparam > 0 && tlen < 3 ? (
