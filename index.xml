@@ -18,6 +18,10 @@ FILT locked for ROLL by default.]]></changelog>
         <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5.1/Volca%20Drum%20Panel.jsfx</source>
         <changelog><![CDATA[Classic look: part titles = small PART label + big number, so they fit at any window size (were cut to "P...").]]></changelog>
       </version>
+      <version name="1.5.2" author="NH4X" time="2026-11-08T13:10:00Z">
+        <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5.2/Volca%20Drum%20Panel.jsfx</source>
+        <changelog><![CDATA[Fix: switching Q (pitch quantize) off now always brings the part back to its PITCH value (also via undo / automation).]]></changelog>
+      </version>
     </reapack>
   </category>
 </index>

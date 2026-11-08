@@ -1,5 +1,5 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 1.5.1 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 1.5.2 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
@@ -586,7 +586,7 @@ function loadsound(k) local(j, n) (
     lastn = nchg;
   );
   slider(SA_IDX) != last_sendall ? (last_sendall = slider(SA_IDX); sendall(););
-  q_ = 0; loop(6, (slider(151 + q_) >= 0.5) != qlast[q_] ? (qlast[q_] = (slider(151 + q_) >= 0.5); qdirty[q_] = 1;); q_ += 1;);
+  // QPI (sliders 151-156) is handled in @block only (v1.5.2: handling it here too skipped the PITCH resend on Q off via undo / automation)
   // Roll / Undo buttons (automation / MIDI controller): fire on 1, reset to 0
   slider(146) >= 0.5 ? (slider(146) = 0; slider_automate(slider(146)); doroll(););
   slider(147) >= 0.5 ? (slider(147) = 0; slider_automate(slider(147)); doundo(););
@@ -652,10 +652,17 @@ loop(6,
   // QPI: compared every block (GUI clicks don't run @slider), sent when changed or on Send all
   !sync_pending && (slider(151 + i) >= 0.5) != qlast[i] ? (
     qlast[i] = (slider(151 + i) >= 0.5); qdirty[i] = 1;
-    // v1.4.3: QPI off = the part may still sit on the last played note: resend L1 + L2 PITCH (sent next block, after the QPI CC)
-    !qlast[i] ? (dirty[i * 22 + 5] = 1; dirty[i * 22 + 12] = 1;);
   );
-  n < MAXSEND && qdirty[i] ? (midisend(0, $xB0 | i, 53, qlast[i] ? 127 : 0); qdirty[i] = 0; n += 1;);
+  n < MAXSEND && qdirty[i] ? (
+    midisend(0, $xB0 | i, 53, qlast[i] ? 127 : 0); qdirty[i] = 0; n += 1;
+    // QPI off = the part still sits on the last played note: send L1 + L2 PITCH right after, first nudged by 1, then the
+    // real value (v1.5.2: the same value again was ignored, the pitch stayed on the note)
+    !qlast[i] ? (
+      q_ = i * 22 + 5;  midisend(0, $xB0 | i, cc[q_], last[q_] < 127 ? last[q_] + 1 : 126); midisend(0, $xB0 | i, cc[q_], last[q_]);
+      q_ = i * 22 + 12; midisend(0, $xB0 | i, cc[q_], last[q_] < 127 ? last[q_] + 1 : 126); midisend(0, $xB0 | i, cc[q_], last[q_]);
+      n += 4;
+    );
+  );
   i += 1;
 );
 // share current values, CC numbers and channels with the Volca Drum Sequencer (p-locks, 2026-11-04):
@@ -991,7 +998,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5.1 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5.2 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1012,7 +1019,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfont(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5.1 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5.2 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1387,7 +1394,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5.1", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5.2", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1444,7 +1451,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5.1", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5.2", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----
