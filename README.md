@@ -2,7 +2,7 @@
 
 A free editor for the **Korg volca drum** inside REAPER, as one JSFX file. All parameters of all 6 parts and the waveguide on one screen, with a big readout that shows what you just changed in plain words (e.g. `SAW · OSCILLATE · EXP` instead of a raw number).
 
-By NH4X. Version 1.5. Music: https://nh4x.bandcamp.com/
+By NH4X. Version 1.5.1. Music: https://nh4x.bandcamp.com/
 
 ![Volca Drum Panel in REAPER](screenshot.png)
 
@@ -102,6 +102,7 @@ Not tested by me, but it should work: **ysfx** is a free, open-source plugin tha
 A step sequencer for the volca drum is on its way, in this same ReaPack repository. With it, more parts of the panel come alive: sound files (save / load / rename / delete a part from the SOUND menu), kit scripts (save, next, previous, kit names in the display and in MORPH), a kit per sequencer pattern, p-locks, and **Q** following the sequencer's pitch lanes. Until then these parts simply stay quiet.
 
 ## Changes
+- 1.5.1: Classic look: part titles = small PART label + big number, so they fit at any window size.
 - 1.5: Select split into SRC / MOD.T / EG.T rows. Two looks + 14 color themes, test hit and Q (QPI) per part, tooltips, notes on channel 11-16 play parts melodically, FILT locked for ROLL by default. Install via ReaPack.
 - 1.0.1: Select (SEL) is easier to set with the mouse: slow relative drag, wheel = one combination per notch.
 - 1.0: first release.

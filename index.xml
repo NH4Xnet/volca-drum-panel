@@ -6,13 +6,17 @@
         <link rel="website" href="https://github.com/NH4Xnet/volca-drum-panel">GitHub / manual</link>
         <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>
       </metadata>
-      <version name="1.5" author="NH4X" time="2026-11-08T13:00:00Z">
+      <version name="1.5" author="NH4X" time="2026-11-08T12:30:00Z">
         <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5/Volca%20Drum%20Panel.jsfx</source>
         <changelog><![CDATA[Select split into SRC / MOD.T / EG.T rows.
 Two looks (Classic / Sleeve) + 14 color themes.
 Test hit and Q (pitch quantize, CC 53) per part.
 Tooltips. Notes on channel 11-16 play parts melodically.
 FILT locked for ROLL by default.]]></changelog>
+      </version>
+      <version name="1.5.1" author="NH4X" time="2026-11-08T12:50:00Z">
+        <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5.1/Volca%20Drum%20Panel.jsfx</source>
+        <changelog><![CDATA[Classic look: part titles = small PART label + big number, so they fit at any window size (were cut to "P...").]]></changelog>
       </version>
     </reapack>
   </category>

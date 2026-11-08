@@ -1,5 +1,5 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 1.5 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 1.5.1 by NH4X - editor + display for the Korg volca drum, as one JSFX.
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
@@ -991,7 +991,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5.1 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1012,7 +1012,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfont(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5.1 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1198,12 +1198,13 @@ nl = 0; nv = 0;
     );
     // title = select / part lock (amber title + top edge when locked); then PLAY and LINK
     lkw = S(36); lkh = S(16); lkx[p] = cx + colw - PAD - lkw; lky[p] = cy + S(7); lnkww = lkw; lnkhh = lkh;
-    ptx[p] = cx; pty[p] = cy; ptw[p] = lkx[p] - S(50) - cx; pthh[p] = HD1;
+    ptx[p] = cx; pty[p] = cy; ptw[p] = lkx[p] - S(50) - cx; pthh[p] = HD1 + HD2;   // title reaches down to the first row
     qx[p] = lkx[p] - S(48); qy[p] = lky[p];   // Q = QPI button
     plock[p] ? (rc(K_HOT, 1); gfx_rect(cx, cy, colw, S(3)););
-    gfx_setfont(4, "Bahnschrift", CF(S(15)), 'b');
+    // v1.5.1: small PART label + big number below it (left of L1/L2, above the row names); "PART 1" no longer fits next to Q/play/LINK
     plock[p] ? rc(K_HOT, 1) : act ? rc(K_TXT, 1) : rc(K_DIM, 1);
-    sprintf(32, "PART %d", p + 1); txt(fit(32, ptw[p] - PAD - S(2)), cx + PAD + S(1), cy + S(5));
+    gfx_setfont(3, "Bahnschrift", CF(S(9)), 'b'); txt("PART", cx + PAD + S(1), cy + S(5));
+    gfx_setfont(4, "Bahnschrift", CF(S(19)), 'b'); sprintf(32, "%02d", p + 1); txt(32, cx + PAD, cy + S(5) + CF(S(9)));
     tbtn(qx[p], qy[p], S(20), lkh, "Q", slider(151 + p) >= 0.5, S(11));
     playbtn(p, lkx[p] - S(24), lky[p], S(20), lkh);
     tbtn(lkx[p], lky[p], lkw, lkh, "LINK", slider(138 + p) >= 0.5, S(11));
@@ -1386,7 +1387,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5.1", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1443,7 +1444,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5.1", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----
