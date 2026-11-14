@@ -9,37 +9,92 @@ By NH4X. Panel 2.0 · Sequencer 1.0. Music: https://nh4x.bandcamp.com/
 ## Install (5 minutes, do it once)
 
 > [!IMPORTANT]
-> Do the steps in this order. Most "it doesn't work" problems come from step 5 or step 6.
+> Do the steps in this order. Most "it doesn't work" problems come from step 5 (MIDI out, routing, FX order) or step 6 (volca channels).
 
-**1. Install ReaPack** (free package manager for REAPER), if you don't have it yet:
-https://reapack.com/
-Follow the instructions there and restart REAPER.
+Click any screenshot to see it full size.
 
-**2. Add this repository**
-In REAPER: **Extensions > ReaPack > Import repositories...**, paste this line, click **OK**:
+### Step 1 · Install ReaPack
+ReaPack is the free package manager for REAPER. Already have it? Go to step 2.
+
+1. Go to https://reapack.com/ and download ReaPack for your system (Windows: `reaper_reapack-x64.dll`).
+2. Find the downloaded file in your **Downloads** folder and **copy** it.
+3. In REAPER: **Options > Show REAPER resource path in explorer/finder**. A file window opens.
+4. Open the folder **UserPlugins** in there (if it's missing, create it) and **paste** the file.
+5. **Close REAPER and start it again.** ReaPack opens its *Manage repositories* window once: that means it works.
+
+<p align="center">
+  <a href="install/1-reapack-download.png"><img src="install/1-reapack-download.png" height="200" alt="reapack.com download page with the quick install steps"></a>
+  <a href="install/1-resource-path.png"><img src="install/1-resource-path.png" height="200" alt="Options menu: Show REAPER resource path in explorer/finder"></a>
+  <br><sub>Download ReaPack · Options > Show REAPER resource path</sub>
+</p>
+<p align="center">
+  <a href="install/1-userplugins.png"><img src="install/1-userplugins.png" width="720" alt="The ReaPack dll pasted into the UserPlugins folder"></a>
+  <br><sub>The dll in <code>UserPlugins</code></sub>
+</p>
+
+### Step 2 · Add this repository
+1. In REAPER: **Extensions > ReaPack > Import repositories...** (or, in the *Manage repositories* window: **Import/export... > Import repositories...**).
+2. Paste this line and click **OK**:
 
 ```
 https://github.com/NH4Xnet/volca-drum-suite/raw/main/index.xml
 ```
 
-**3. Install the plugins**
-**Extensions > ReaPack > Browse packages**, type **volca** in the filter. Right-click **Volca Drum Panel** > **Install**, right-click **Volca Drum Sequencer** > **Install**, then click **Apply** (or **OK**).
+<p align="center">
+  <a href="install/2-import-repository.png"><img src="install/2-import-repository.png" width="440" alt="Import repositories dialog with the URL pasted"></a>
+</p>
+
+### Step 3 · Install the two plugins
+1. **Extensions > ReaPack > Browse packages**.
+2. Type **volca** into the filter.
+3. Right-click **Volca Drum Sequencer** > **Install**, then right-click **Volca Drum Panel** > **Install**.
+4. Confirm with **Apply** (or **OK**).
+
 This also installs the helper actions (they all start with "Volca" in the action list).
 
-**4. Start the listener (one click, once)**
-Open the action list (**Actions > Show action list**, or press **?**), type **volca listener**, double-click **Script: Volca listener (start).lua** and click **Yes**.
-From now on it starts with REAPER by itself. It lets the panel save sound files and the sequencer read your regions. (If you click No, it runs until you close REAPER and asks again next time.)
+<p align="center">
+  <a href="install/3-browse-packages.png"><img src="install/3-browse-packages.png" width="540" alt="Browse packages filtered to volca, right-click > Install"></a>
+</p>
 
-**5. Let REAPER talk to your volca**
-**Options > Preferences** (Ctrl+P) > **Audio > MIDI Outputs**: right-click the port your volca is plugged into > **Enable output**. The **Enable** column now shows a dot for that port.
-The **Clock** column of that port must stay **empty**: REAPER must not send MIDI clock to the volca, or the volca's own sequencer starts playing along. (If it shows a dot, right-click the port and switch the clock off.)
+### Step 4 · Start the listener (once)
+The panel and the sequencer need a small background helper to talk to each other (it also saves sound files and reads your regions).
 
-**6. Set up the track**
-1. Make a new track. Click its **FX** button and add **JS: Volca Drum Sequencer**, then **JS: Volca Drum Panel**. **Sequencer first, panel second.** The order matters.
-2. Click the track's **Route** button. Under **MIDI Hardware Output** pick your volca's port, **Send to original channels**. (Not a single channel: the parts listen on channels 1-6.)
-3. Optional, if the volca's audio comes back into REAPER through your audio interface: add a second track, set its input to the volca's input, arm it and turn record monitoring on. Otherwise you hear the volca from its own output or your mixer.
+1. **Actions > Show action list**.
+2. Search for **volca listener**.
+3. Select **Script: Volca listener (start).lua** and click **Run** (or double-click it).
+4. A window asks if it may start with REAPER from now on: click **Yes**.
+5. A message confirms it. From now on it starts with REAPER by itself. (If you click No, it runs until you close REAPER and asks again next time.)
 
-**7. Set up the volca**
+<p align="center">
+  <a href="install/4-listener.png"><img src="install/4-listener.png" width="440" alt="Volca listener: start it automatically with REAPER? Yes"></a>
+</p>
+
+### Step 5 · Set up the track
+1. **Add a track** (**Track > Insert new track**).
+2. **Enable MIDI out to your volca**: **Options > Preferences > Audio > MIDI Outputs**, right-click the port your volca is plugged into > **Enable output**. The **Enable** column shows a dot for that port.
+   The **Clock** column must stay **empty**: REAPER must not send MIDI clock to the volca, or the volca's own sequencer starts playing along. (If it shows a dot, right-click the port and switch the clock off.) Click **OK**.
+3. **Open the track's routing window** (the track's **Route** button).
+4. Under **MIDI Hardware Output** pick your volca's MIDI port and **Send to original channels**. (Not a single channel: the parts listen on channels 1-6.) Close the window.
+
+<p align="center">
+  <a href="install/5-midi-output.png"><img src="install/5-midi-output.png" height="230" alt="Preferences > MIDI Outputs: volca port enabled, Clock column empty"></a>
+  <a href="install/5-route.png"><img src="install/5-route.png" height="230" alt="Routing window: MIDI Hardware Output = volca port, Send to original channels"></a>
+  <br><sub>MIDI output enabled, no clock · Routing: MIDI Hardware Output</sub>
+</p>
+
+5. Click the track's **FX** button and type **volca** into the filter.
+6. Add **first the Volca Drum Sequencer**, **then the Volca Drum Panel**. The order matters.
+7. **Arm the track** (its record button). Then the sequencer also runs smoothly while REAPER is stopped (FREE mode) and hears your MIDI keyboard for tap record.
+
+<p align="center">
+  <a href="install/5-add-fx.png"><img src="install/5-add-fx.png" height="230" alt="Add FX filtered to volca: sequencer first"></a>
+  <a href="install/6-done.png"><img src="install/6-done.png" height="230" alt="Done: Volca Drum Sequencer and Panel on the track"></a>
+  <br><sub>Sequencer first, then panel · Done</sub>
+</p>
+
+**You are done.** To hear the volca through REAPER (if its audio comes back through your audio interface): add a second track, set its input to the volca's input, arm it and turn record monitoring on. Otherwise you hear it from its own output or your mixer.
+
+### Step 6 · Set up the volca
 - **Split channel mode**, so part 1-6 listen on MIDI channel 1-6 (the Korg manual shows how).
 - Recommended: the custom firmware **vdcf 1.22** by hj-oja: https://github.com/hj-oja/vdcf
   It adds FILT and CLIP (the purple rows in the panel) and makes velocity work like this: 63 = the panel's LEVEL, lower = ghost note, higher = accent. On the stock firmware everything else works.
