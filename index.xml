@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<index version="1" name="NH4X Volca">
+<index version="1" name="NH4X Volca Drum Suite">
   <category name="Volca Drum">
     <reapack name="Volca Drum Panel.jsfx" type="effect" desc="Volca Drum Panel (Korg volca drum editor)">
       <metadata>
-        <link rel="website" href="https://github.com/NH4Xnet/volca-drum-panel">GitHub / manual</link>
+        <link rel="website" href="https://github.com/NH4Xnet/volca-drum-suite">GitHub / manual</link>
         <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>
       </metadata>
       <version name="1.5" author="NH4X" time="2026-11-08T12:30:00Z">
@@ -21,6 +21,33 @@ FILT locked for ROLL by default.]]></changelog>
       <version name="1.5.2" author="NH4X" time="2026-11-08T13:10:00Z">
         <source>https://github.com/NH4Xnet/volca-drum-panel/raw/v1.5.2/Volca%20Drum%20Panel.jsfx</source>
         <changelog><![CDATA[Fix: switching Q (pitch quantize) off now always brings the part back to its PITCH value (also via undo / automation).]]></changelog>
+      </version>
+      <version name="2.0" author="NH4X" time="2026-11-14T13:18:44Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20Drum%20Panel.jsfx</source>
+        <source file="Volca listener (start).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20listener%20%28start%29.lua</source>
+        <source file="Volca sound (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20sound%20%28save%29.lua</source>
+        <source file="Volca sound (load).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20sound%20%28load%29.lua</source>
+        <source file="Volca kit (save).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20kit%20%28save%29.lua</source>
+        <source file="Volca kit (kit +).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20kit%20%28kit%20%2B%29.lua</source>
+        <source file="Volca kit (kit -).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20kit%20%28kit%20-%29.lua</source>
+        <source file="Volca kit (send all).lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20kit%20%28send%20all%29.lua</source>
+        <changelog><![CDATA[Works together with the new Volca Drum Sequencer (p-locks, kit per pattern, LINK sends locks to both layers).
+AUTO SEND: the whole kit goes out once after a project load (toggle next to SEND ALL, on by default).
+Sound files: SAVE / LOAD / RENAME / DELETE a part in the SOUND menu (save, rename, delete need the action "Volca listener (start)").
+Kit actions: Volca kit (save) / (kit +) / (kit -) / (send all), kit names in the display.
+UNDO also takes back a kit load and MORPH. Sends are paced by time. Fixes: typed values time out, locks after a sample-rate change, sound names starting with # ! > <.
+Installs the scripts too (Actions list: "Volca ...").]]></changelog>
+      </version>
+    </reapack>
+    <reapack name="Volca Drum Sequencer.jsfx" type="effect" desc="Volca Drum Sequencer (step sequencer for the Korg volca drum)">
+      <metadata>
+        <link rel="website" href="https://github.com/NH4Xnet/volca-drum-suite">GitHub / manual</link>
+        <link rel="website" href="https://nh4x.bandcamp.com/">NH4X music</link>
+      </metadata>
+      <version name="1.0" author="NH4X" time="2026-11-14T13:18:44Z">
+        <source>https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20Drum%20Sequencer.jsfx</source>
+        <source file="Volca duck to selected tracks.lua" type="script" main="main">https://github.com/NH4Xnet/volca-drum-suite/raw/suite-1.0/Volca%20Drum/Volca%20duck%20to%20selected%20tracks.lua</source>
+        <changelog><![CDATA[First release.]]></changelog>
       </version>
     </reapack>
   </category>

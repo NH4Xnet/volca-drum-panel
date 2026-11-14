@@ -1,44 +1,43 @@
 desc:Volca Drum Panel
-// VOLCA DRUM PANEL 1.5.2 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// VOLCA DRUM PANEL 2.0 by NH4X - editor + display for the Korg volca drum, as one JSFX.
+// Part of the NH4X Volca Drum Suite: https://github.com/NH4Xnet/volca-drum-suite  (manual + setup in the README there)
 // Music: https://nh4x.bandcamp.com/
 //
 // SETUP
-//  1. Install via ReaPack, or put this file into REAPER's Effects folder (Options > Show REAPER resource path > Effects),
-//     then add "JS: Volca Drum Panel" to a track.
-//  2. Track: MIDI hardware output = the port your volca drum is connected to.
+//  1. Install via ReaPack (repository above), then add "JS: Volca Drum Panel" to a track.
+//     With the Volca Drum Sequencer: sequencer FIRST, panel after it on the same track.
+//  2. Track: MIDI hardware output = the port your volca drum is connected to (send to original channels).
 //  3. Volca: split channel mode (part 1-6 = MIDI channel 1-6, see the Korg manual). Waveguide CCs go out on channel 1.
-//  4. FILT and CLIP (purple row names) need the custom firmware "vdcf" by hj-oja (CC 54/55);
+//  4. FILT and CLIP (purple row names) need the custom firmware "vdcf" 1.22 by hj-oja (CC 54/55);
 //     on the stock Korg firmware they do nothing. Everything else works on stock firmware.
+//  5. Run the action "Volca listener (start)" once and answer Yes (sound SAVE / RENAME / DELETE need it).
 //
 // USE
 //  - Drag or mouse wheel = change, double-click = default, hover + type 0-127 + Enter = exact value.
 //    Rest the mouse 1 s on a button = what it does (in the display).
 //  - SELECT is shown as three rows: SRC (source), MOD.T (modulation type), EG.T (envelope type).
-//    Each row changes only its own part (click a segment, drag or wheel). Still one Select CC underneath.
-//  - The volca has no MIDI out: the panel only knows what it sent. SEND ALL pushes the whole kit
-//    (nothing is sent when a project loads).
+//    Each row changes only its own part. Still one Select CC underneath (n = value x 45 / 128).
+//  - The volca has no MIDI out: the panel only knows what it sent. SEND ALL pushes the whole kit.
+//    AUTO SEND (on by default) sends the whole kit once after a project load.
 //  - Kits = REAPER presets of this plugin (preset menu at the top of the FX window). Loading one sends the changes.
+//    Actions "Volca kit (save)" / "(kit +)" / "(kit -)" / "(send all)" do the same from a key or controller.
 //  - Click a part title = select that part. LINK = changes on one layer go to the other layer too.
 //    Play button = one test hit on that part. Q = pitch quantize (QPI, CC 53) for that part.
-//  - SOUND (or right-click a part title): copy a part, paste it into another part (also across kits).
+//  - SOUND (or right-click a part title): copy / paste a part, LOAD a sound file; SAVE / RENAME / DELETE need the listener.
+//    Sound files: REAPER resource folder / Data / NH4X Volca / VolcaSounds (shared by all projects).
 //  - RANDOM: target (part / layer / kit), amount, ROLL, UNDO (also undoes a paste; press again = redo).
 //    Locks (amber) are skipped by every roll: right-click (or Shift+click) a bar = one cell,
 //    click a row name = that row in this part, right-click a row name = that row in all parts,
 //    Shift+click a part title = whole part. Locks are saved with the project, not in presets.
 //  - MORPH: SET A, SET B (snapshots of the whole kit, saved with the project), then move the bar.
-//    Select and WG Model switch at 50 %. Locked cells don't move. Tip: set A and B from two saved kits.
+//    Select and WG Model switch at 50 %. Locked cells don't move.
 //  - LOOK (small square, top left) = Classic / Sleeve. COLOR (swatch next to it) = 14 color themes (click or wheel).
 //    Sleeve uses the free font "Big Shoulders Display" if installed (Google Fonts), otherwise Bahnschrift Condensed.
 //  - Note routing: notes 65/67/69/71/72/74 on any channel go out on channel 1-6 (= part 1-6),
 //    so one piano roll on one channel plays all parts. Notes on channel 11-16 go to part 1-6 unchanged
 //    (play a part melodically, best with Q on). All other MIDI passes through.
-//  - All parameters are plugin parameters: automation and MIDI controllers (e.g. ReaLearn) work.
+//  - All parameters are plugin parameters: automation and MIDI controllers work.
 //    Sliders 146 Roll / 147 Undo act as buttons (1 = fire), 148 = Morph.
-//
-// COMING WITH THE VOLCA DRUM SEQUENCER RELEASE (same ReaPack repository):
-//  sound files (SAVE / LOAD / RENAME / DELETE a part in the SOUND menu), kit scripts (save / next / previous kit,
-//  kit names in the display and in MORPH), kit per sequencer pattern, p-locks from the sequencer, Q following the
-//  sequencer's pitch lanes. Until then these parts of the panel simply stay quiet.
 //
 // CC numbers: Korg "volca drum MIDI Implementation Chart (Split channel)" 2019.2.20 + vdcf README (54 FLT, 55 CLP),
 // QPI CC 53 from the Synthmata volca drum editor. Fonts: Bahnschrift + Consolas (Windows).
@@ -204,6 +203,7 @@ slider153:0<0,1,1{off,on}>-P3 QPI (CC 53)
 slider154:0<0,1,1{off,on}>-P4 QPI (CC 53)
 slider155:0<0,1,1{off,on}>-P5 QPI (CC 53)
 slider156:0<0,1,1{off,on}>-P6 QPI (CC 53)
+slider157:1<0,1,1{off,on}>-Auto send on load
 
 @init
 ext_noinit = 1;
@@ -269,6 +269,7 @@ anote[0] = 65; anote[1] = 67; anote[2] = 69; anote[3] = 71; anote[4] = 72; anote
 // memory: ub 2400 (undo buffer), sgx/sgy 3000/3010, rlo/rhi/rbs 3100/3120/3140, lockm 3200, themes 5000-6385, TINTA 6600,
 //   QPI 7000-7045, labx/laby/labq 7100/7300/7500 (lock label hits, 102 rows), split Select cells vsi..vsh 7700-8235
 ub = 2400; labx = 7100; laby = 7300; labq = 7500; sgx = 3000; sgy = 3010;
+kub = 4300;   // [1..136] values before the current @slider run (undo for kit loads)
 vsi = 7700; vsc = 7800; vsx = 7900; vsy = 8000; vsw = 8100; vsh = 8200; nv = 0;
 lastcomp = -1;     // split Select: component last changed by mouse (0 SRC, 1 MOD.T, 2 EG.T), -1 = whole value
 rlo = 3100; rhi = 3120; rbs = 3140;
@@ -287,7 +288,7 @@ lockm = 3200;
 plock = 3400;      // part lock [0-5], [6] = waveguide (Shift+click the part title; click = select, right-click = SOUND menu)
 ptx = 3410; pty = 3420; ptw = 3430;   // title rectangles for clicks
 LR = 0.95; LG = 0.65; LB = 0.15;   // lock colour amber (red = focus/activity)
-p = 0; loop(6, lockm[p * 22 + 2] = lockm[p * 22 + 9] = lockm[p * 22 + 15] = lockm[p * 22 + 19] = lockm[p * 22 + 21] = 1; p += 1;);
+!lockdef ? (lockdef = 1; p = 0; loop(6, lockm[p * 22 + 2] = lockm[p * 22 + 9] = lockm[p * 22 + 15] = lockm[p * 22 + 19] = lockm[p * 22 + 21] = 1; p += 1;););   // only once per instance
 
 function clampv(v) ( max(0, min(127, floor(v + 0.5))) );
 
@@ -347,7 +348,7 @@ function markchange(i) (
   lastchg = i;
   lastcomp = -1;
   lastchg_t = time_precise();
-  i > 0 ? fp = i <= 132 ? floor((i - 1) / 22) : 6;
+  i > 0 ? (fp = (i <= 132 ? floor((i - 1) / 22) : 6););
   ck_ed = 1;   // current kit name gets a * (edited)
   gmem[200] = fp;   // focused part for the sound scripts (0-5, 6 = waveguide)
 );
@@ -405,12 +406,12 @@ function setrow(p, r, v) (
 function togglerow(p, r) ( setrow(p, r, !rowlocked(p, r)); );
 // same row in all 6 parts: lock all, or unlock all if every part is already locked
 function togglerowall(r) local(p, a) (
-  a = 1; p = 0; loop(6, !rowlocked(p, r) ? a = 0; p += 1;);
+  a = 1; p = 0; loop(6, !rowlocked(p, r) ? (a = 0;); p += 1;);
   p = 0; loop(6, setrow(p, r, !a); p += 1;);
 );
 // new value: move from the current value towards a random one by Amount (100% = fully random)
 function rv(i, q) local(x) (
-  x = rand(1); rbs[q] ? x = x * x;
+  x = rand(1); rbs[q] ? (x = x * x;);
   slider(i) + slider(144) / 100 * (rlo[q] + (rhi[q] - rlo[q]) * x - slider(i));
 );
 // w: 0 = whole part, 1 = layer 1, 2 = layer 2. Link L1+L2 on: both layers get the same value
@@ -510,9 +511,9 @@ function msg() ( lastchg = -3; lastchg_t = time_precise(); );
 // file name without folder and .txt
 function basename(src, dst) local(n, s, i, c, ln) (
   n = strlen(src); s = 0; i = 0;
-  loop(n, c = str_getchar(src, i); (c == 47 || c == 92) ? s = i + 1; i += 1;);
+  loop(n, c = str_getchar(src, i); (c == 47 || c == 92) ? (s = i + 1;); i += 1;);
   ln = n - s;
-  ln > 4 && str_getchar(src, n - 4) == 46 ? ln -= 4;
+  ln > 4 && str_getchar(src, n - 4) == 46 ? (ln -= 4;);
   strcpy_substr(dst, src, s, ln);
 );
 // all numbers of the lines that start with a digit -> fbuf. Returns the count, -1 = can't open
@@ -572,6 +573,7 @@ function loadsound(k) local(j, n) (
 @slider
 !sync_pending ? (
   nchg = 0;
+  i = 1; loop(NS, kub[i] = last[i]; i += 1;);
   i = 1;
   loop(NS,
     v = clampv(slider(i));
@@ -580,6 +582,7 @@ function loadsound(k) local(j, n) (
   );
   // mirror only single changes (knob/automation), never kit loads or the Both pages
   nchg == 1 ? (markchange(ch_i); mirror(ch_i, last[ch_i]);) : nchg > 1 ? (
+    nchg > 8 ? (i = 1; loop(NS, ub[i] = kub[i]; i += 1;); undo_ok = 1; undone = 0; strcpy(#ul, "KIT LOAD"););   // a whole kit, not two knobs at once
     // keep a fresh kit message (the script loaded the preset) instead of "KIT LOADED"
     // (also not while a script message is still unread: gmem[0] != kitcnt)
     !(lastchg == -2 && time_precise() - lastchg_t < 1.5) && gmem[0] == kitcnt ? (lastchg = -1; lastchg_t = time_precise(); ckok = 0;);
@@ -599,16 +602,17 @@ function loadsound(k) local(j, n) (
 !sync_pending && gmem[2600] != kitrx ? (
   kitrx = gmem[2600]; kn_ = 0; i = 1;
   loop(NS, v = clampv(gmem[2600 + i]); v != last[i] ? (slider(i) = v; last[i] = v; midisend(0, $xB0 | chn[i], cc[i], v); kn_ += 1;); dirty[i] = 0; i += 1;);
-  kn_ ? (ck_ed = 1; sprintf(#rm, "PATTERN %d KIT · %d PARAMS", gmem[2737] + 1, kn_); msg(););
+  // v1.5.4.2: pattern -1 = the sequencer took a pre-sent kit back: sound from before, edited mark as before
+  kn_ ? (gmem[2737] < 0 ? (ck_ed = ck_was; sprintf(#rm, "SOUND BACK · %d PARAMS", kn_);) : (ck_was = ck_ed; ck_ed = 1; sprintf(#rm, "PATTERN %d KIT · %d PARAMS", gmem[2737] + 1, kn_);); msg(););
 );
 // incoming MIDI: re-channel drum notes (note on/off, poly aftertouch), pass the rest
 while (midirecv(mofs, m1, m2, m3)) (
-  mt = m1 & $xF0;
+  mt = m1 & $xF0; png_ = (m1 == $xBF && m2 == 119); png_ ? (gmem[997] = (gmem[997] + 1) % 1000000;);   // v1.5.2.2: the sequencer's order ping (controller 119, channel 16): counted, not passed on
   // ch 11-16 = pitched notes for part 1-6 (sequencer PIT lanes, piano roll): to ch 1-6, note unchanged (v1.3.1)
   (mt == $x80 || mt == $x90 || mt == $xA0) ? (
     (m1 & $x0F) >= 10 ? (m1 = mt | ((m1 & $x0F) - 10);) : nmap[m2] >= 0 ? (m1 = mt | nmap[m2];);
   );
-  midisend(mofs, m1, m2, m3);
+  !png_ ? midisend(mofs, m1, m2, m3);
 );
 // ▶ test hit: note on channel 1-6 (= part), velocity 63 (= panel LEVEL), note-off after 0.2 s
 au_p = 0;
@@ -628,7 +632,9 @@ sync_pending ? (
   i = 0; loop(6, qlast[i] = (slider(151 + i) >= 0.5); qdirty[i] = 0; i += 1;);
   last_sendall = slider(SA_IDX); last_morph = slider(148);
   sync_pending = 0;
+  slider157 >= 0.5 ? sendall();   // v1.5.3 AUTO SEND: total recall on project load (kit + QPI)
 );
+MAXSEND = max(1, min(8, floor(samplesblock / srate * 800)));   // about 0.8 CC per ms, never more than 8 per block
 n = 0;
 i = 1;
 loop(NS,
@@ -643,7 +649,10 @@ loop(NS,
 gmem[1710] == 1 ? (
   i = 0;
   loop(6,
-    gmem[1700 + i] != seqq[i] ? (seqq[i] = gmem[1700 + i]; slider(151 + i) = (seqq[i] >= 0.5); slider_automate(slider(151 + i)););
+    gmem[1700 + i] != seqq[i] ? (
+      seqq[i] = gmem[1700 + i];
+      (seqq[i] >= 0.5) != (slider(151 + i) >= 0.5) ? (slider(151 + i) = (seqq[i] >= 0.5); slider_automate(slider(151 + i)););
+    );
     i += 1;
   );
 );
@@ -668,7 +677,8 @@ loop(6,
 // share current values, CC numbers and channels with the Volca Drum Sequencer (p-locks, 2026-11-04):
 // gmem[1000 + n] = value of slider n, [1200 + n] = CC, [1400 + n] = channel 0-5, [999] = 1 (panel present)
 pl_i = 1; loop(NS, gmem[1000 + pl_i] = last[pl_i]; gmem[1200 + pl_i] = cc[pl_i]; gmem[1400 + pl_i] = chn[pl_i]; pl_i += 1;);
-gmem[999] = 1;
+pl_i = 0; loop(6, gmem[1720 + pl_i] = slider(138 + pl_i) >= 0.5; pl_i += 1;);   // v1.5.5: LINK L1+L2 per part for the sequencer's p-locks
+gmem[999] = 1; gmem[998] = (gmem[998] + 1) % 1000000;   // v1.5.2.1 heartbeat: counts every block, so the sequencer sees a removed / bypassed panel
 
 @serialize
 // v1 = cell locks, v2 = + part locks, v3 = + morph A/B. Old projects without data keep the defaults from @init
@@ -878,7 +888,7 @@ function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
       // the whole cell is the bar (value fills from the left; pan / filter from the centre)
       kind == 1 ? rc(K_ACC, 0.6) : kind == 2 ? rc(K_PLY, 0.3) : rc(K_BAR, 0.6);
       hot > 0 ? rc(K_FOC, 0.75);
-      lockm[i] ? gfx_a *= 0.5;
+      lockm[i] ? (gfx_a *= 0.5;);
       (pm(i) == 0 || pm(i) == 6) ? (
         f = (v - 64) / 64 * (wi / 2);
         f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
@@ -894,7 +904,7 @@ function drawbar(i, x, y, wi, h, kind) local(v, f, hot, tw, th) (
     // ---- Classic (facelift): dark field, colored bar, value right
     rc(K_FLD, 1); gfx_rect(x, y, wi, h);
     kind == 1 ? rc(K_ACC, 0.72 + 0.28 * hot) : kind == 2 ? rc(K_ALT, 0.55 + 0.35 * hot) : rc(K_TXT, 0.40 + 0.45 * hot);
-    lockm[i] ? gfx_a *= 0.4;   // locked for randomize: dimmed + strip
+    lockm[i] ? (gfx_a *= 0.4;);   // locked for randomize: dimmed + strip
     (pm(i) == 0 || pm(i) == 6) ? (
       f = (v - 64) / 64 * (wi / 2);
       f >= 0 ? gfx_rect(x + wi / 2, y, max(1, f), h) : gfx_rect(x + wi / 2 + f, y, -f, h);
@@ -933,7 +943,7 @@ function drawsel(i, c, x, y, wi, h, kind) local(n, v, hot, j, tw, th) (
     kind == 1 ? (rc(K_ACC, ta_); gfx_rect(x, y, wi, h););
     kind == 1 ? rc(K_ACC, 0.6) : rc(K_PLY, 0.3);
     hot > 0 ? rc(K_FOC, 0.75);
-    lockm[i] ? gfx_a *= 0.5;
+    lockm[i] ? (gfx_a *= 0.5;);
     gfx_rect(x, y, max(1, floor((v + 1) * wi / n)), h);
     rc(K_BG2, 0.7); j = 1; loop(n - 1, gfx_rect(x + floor(j * wi / n), y + S(2), 1, h - S(4)); j += 1;);   // segment ticks
     sfont(5, S(15)); rc(K_TXT, 1);
@@ -942,7 +952,7 @@ function drawsel(i, c, x, y, wi, h, kind) local(n, v, hot, j, tw, th) (
   ) : (
     rc(K_FLD, 1); gfx_rect(x, y, wi, h);
     kind == 1 ? rc(K_ACC, 0.72 + 0.28 * hot) : rc(K_ALT, 0.55 + 0.35 * hot);
-    lockm[i] ? gfx_a *= 0.4;
+    lockm[i] ? (gfx_a *= 0.4;);
     gfx_rect(x, y, max(1, floor((v + 1) * wi / n)), h);
     rc(K_FLD, 0.9); j = 1; loop(n - 1, gfx_rect(x + floor(j * wi / n), y + 2, 1, h - 4); j += 1;);   // segment ticks
     lockm[i] ? (rc(K_HOT, 1); gfx_rect(x, y, max(2, S(3)), h););
@@ -976,9 +986,9 @@ gmem[0] != kitcnt ? (
   strcpy(#kn, ""); k = 0;
   loop(min(gmem[2], 60), sprintf(#ch, "%c", gmem[3 + k]); strcat(#kn, #ch); k += 1;);
   lastchg = -2; lastchg_t = now;
-  kitkind == 3 ? sendall_t = now;
+  kitkind == 3 ? (sendall_t = now;);
   kitkind == 1 || kitkind == 2 ? (strcpy(#ck, #kn); ckok = 1; ck_ed = 0;);   // name for Morph A/B
-  kitkind == 4 ? ck_ed = 1;   // sound loaded into a part = kit edited
+  kitkind == 4 ? (ck_ed = 1;);   // sound loaded into a part = kit edited
 );
 
 // ---- header geometry ----
@@ -990,7 +1000,8 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   RDX0 = MG + TBW + MG; RDY0 = MG; RDW0 = RW; RDH0 = READH; RVR = RDX0 + RW - S(16); RX = RDX0 + S(16);
   LKBH = S(16); CLBX = MG + TBW - LCW; LKBX = CLBX - S(6) - LCW; LKBY = MG + S(6); CLBY = LKBY;   // LOOK + COLOR icons, title block
   sbx = gfx_w - MG - SENDBW; sby = MG; sbw = SENDBW; sbh = READH - S(26);
-  ssx = sbx; ssy = sby + sbh + S(4); ssw = SENDBW; ssh = READH - sbh - S(4);
+  ssx = sbx; ssy = sby + sbh + S(4); ssw = SENDBW - S(58); ssh = READH - sbh - S(4);
+  aow = S(54); aox = ssx + ssw + S(4); aoy = ssy; aoh = ssh;   // v1.5.3 AUTO SEND toggle, right of SOUND
   // readout box
   rc(K_RDB, 1); gfx_rect(RDX0, MG, RW, READH);
   rc(K_RDB, 0.55); gfx_rect(RDX0, MG, RW, S(3));
@@ -998,7 +1009,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   // title block
   gfx_setfont(1, "Bahnschrift", floor(S(20) * 1.2 + 0.5), 'b'); rc(K_TXT, 1); txt("VOLCA DRUM", MG, MG + S(2));
   gfx_setfont(3, "Bahnschrift", floor(S(12) * 1.2 + 0.5), 'b'); rc(K_ACC, 1); txt("P A N E L", MG + S(1), MG + S(29));
-  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v1.5.2 · classic", MG + S(1), MG + S(47));   // bump on every change
+  gfx_setfont(5, "Consolas", floor(S(10) * 1.2 + 0.5)); rc(K_DIM, 1); txt("v2.0 · classic", MG + S(1), MG + S(47));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch (accent color), like the sequencer; hover = name in the readout
   rc(K_LBL, 0.8); frame(LKBX, LKBY, LCW, LKBH); gfx_rect(LKBX + S(3), LKBY + S(3), (LCW - S(6)) / 2, LKBH - S(6));
   rc(K_ACC, 1); gfx_rect(CLBX + S(2), CLBY + S(2), LCW - S(4), LKBH - S(4)); rc(K_LBL, 0.8); frame(CLBX, CLBY, LCW, LKBH);
@@ -1008,9 +1019,11 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   gfx_setfont(4, "Bahnschrift", CF(S(16)), 'b'); rc(K_TXT, 1); ctxt(flash > 0 ? "SENT" : "SEND ALL", sbx, sby + (sbh - CF(S(16))) / 2 - 1, sbw);
   gbtn(ssx, ssy, ssw, ssh);
   gfx_setfont(3, "Bahnschrift", CF(S(11)), 'b'); rc(K_TXT, 1); ctxt("SOUND", ssx, ssy + (ssh - CF(S(11))) / 2 - 1, ssw);
+  tbtn(aox, aoy, aow, aoh, "AUTO", slider157 >= 0.5, S(11));   // v1.5.3
 ) : (
   HDH = S(86); HDB = HDH + S(5);
-  TTW = S(124); sbw = S(90); sbx = gfx_w - sbw; sby = 0; sbh = HDH;
+  TTW = S(124); sbw = S(90); sbx = gfx_w - sbw; sby = 0; sbh = HDH - S(30);
+  aox = sbx; aoy = sbh; aow = sbw; aoh = HDH - sbh;   // v1.5.3 AUTO SEND toggle, under SEND ALL
   ssw = S(80); ssx = sbx - ssw; ssy = 0; ssh = HDH;
   LKBH = S(16); CLBX = TTW - S(8) - LCW; LKBX = CLBX - S(6) - LCW; LKBY = S(8); CLBY = LKBY;   // icons in the title block, like the sequencer
   RDX0 = TTW; RDY0 = S(14); RDW0 = ssx - TTW; RDH0 = HDH - S(14); RX = TTW + S(18); RVR = RDX0 + 0.8 * RDW0;
@@ -1019,7 +1032,7 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   rc(K_PLY, 1); gfx_rect(0, 0, TTW, HDH);
   gfx_setfont(1, #sf, S(32), sfb); rc(K_BG2, 1); txt("VOLCA", S(12), S(2)); txt("DRUM", S(12), S(28));
   sfont(3, S(11)); txt("P A N E L", S(13), S(58));
-  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v1.5.2 · sleeve", S(13), S(72));   // bump on every change
+  gfx_setfont(5, #sf, S(12)); rc(K_BG2, 0.7); txt("v2.0 · sleeve", S(13), S(72));   // bump on every change
   // LOOK icon (half-filled square) + COLOR swatch
   rc(K_BG2, 0.8); frame2(LKBX, LKBY, LCW, LKBH, S(2)); gfx_rect(LKBX + S(4), LKBY + S(4), (LCW - S(8)) / 2, LKBH - S(8));
   rc(K_BG2, 1); gfx_rect(CLBX, CLBY, LCW, LKBH); rc(K_ACC, 1); gfx_rect(CLBX + S(3), CLBY + S(3), LCW - S(6), LKBH - S(6));
@@ -1034,6 +1047,8 @@ flash = max(0, 1 - (now - sendall_t) / 1.5);
   sfont(4, S(21)); rc(K_BG2, 1);
   flash > 0 ? ctxt("SENT", sbx, sby + (sbh - S(21) * SFK) / 2, sbw)
             : (ctxt("SEND", sbx, sby + sbh / 2 - S(21) * SFK + S(2), sbw); ctxt("ALL", sbx, sby + sbh / 2 - S(2), sbw););
+  rc(K_BG2, 1); gfx_rect(aox, aoy, aow, aoh); rc(K_PLY, 1); gfx_rect(aox, aoy, aow, S(3)); gfx_rect(aox, aoy, S(4), aoh);   // v1.5.3.1: own strip + line under SEND ALL
+  tbtn(aox + S(9), aoy + S(6), aow - S(13), aoh - S(9), "AUTO", slider157 >= 0.5, S(13));   // v1.5.3
   rc(K_PLY, 1); gfx_rect(0, HDH, gfx_w, S(5));
 );
 (lkhit = inr(LKBX, LKBY, LCW, LKBH)) ? (rc(K_FOC, 0.8); frame(LKBX - 1, LKBY - 1, LCW + 2, LKBH + 2););
@@ -1102,7 +1117,7 @@ lastchg > 0 ? (
 gte = 1;
 
 // SOUND menu (opened by the mouse code at the end of the last frame).
-// A JSFX can't list a folder: the full list comes from the index file "Data\NH4X Volca\VolcaSounds index.txt"
+// A JSFX can't list a folder: the full list comes from the index file "Data/NH4X Volca/VolcaSounds index.txt"
 // (one name per line, written by the sound save script / shipped with a sound pack).
 IBASE = 200;   // string slots 200..449 = names from the index
 function readindex() local(h, n, c) (
@@ -1111,14 +1126,14 @@ function readindex() local(h, n, c) (
     while (n < 250 && file_string(h, IBASE + n) > 0) (
       // trim line end / trailing spaces
       c = strlen(IBASE + n); while (c > 0 && str_getchar(IBASE + n, c - 1) <= 32) (c -= 1;); str_setlen(IBASE + n, c);
-      c > 0 && strncmp(IBASE + n, "NH4XVolca", 9) != 0 ? n += 1;   // skip header and empty lines
+      c > 0 && strncmp(IBASE + n, "NH4XVolca", 9) != 0 ? (n += 1;);   // skip header and empty lines
     );
     file_close(h);
   );
   n;
 );
 function sound_req(r) ( gmem[200] = fp; gmem[201] = r; save_req = 1; save_req_t = time_precise(); );
-function sound_menu(x, y) local(sel, n, k, m) (
+function sound_menu(x, y) local(sel, n, k, m, fc) (
   n = readindex();
   fp == 6 ? strcpy(#mn, "#CLICK A PART FIRST") : (
     sprintf(#mn, "SAVE PART %d AS SOUND...|", fp + 1);
@@ -1127,7 +1142,7 @@ function sound_menu(x, y) local(sel, n, k, m) (
     strcat(#mn, #t2);
     sprintf(#t2, "#LOAD SOUND INTO PART %d", fp + 1); strcat(#mn, #t2);
     n == 0 ? strcat(#mn, "|#(no sound index yet: save a sound once)");
-    k = 0; loop(n, strcat(#mn, "|"); strcat(#mn, IBASE + k); k += 1;);
+    k = 0; loop(n, strcat(#mn, "|"); fc = str_getchar(IBASE + k, 0); (fc == 35 || fc == 33 || fc == 62 || fc == 60) ? strcat(#mn, " "); strcat(#mn, IBASE + k); k += 1;);   // # ! > < at the start = menu syntax: a space in front
     strcat(#mn, "||RENAME SOUND...|DELETE SOUND...");
   );
   gfx_x = x; gfx_y = y;
@@ -1141,13 +1156,13 @@ function sound_menu(x, y) local(sel, n, k, m) (
   );
 );
 // SAVE / DELETE / RENAME: a JSFX can't write files. The flag gmem[201] (1 save, 3 delete, 4 rename) is answered by the
-// script "Volca sound (save)" running in the background (it sets the flag back to 0; delete/rename show their
+// action "Volca listener (start)" running in the background (it sets the flag back to 0; delete/rename show their
 // own list at the mouse). Nobody answers within 1.5 s = script not running.
 save_req ? (
-  gmem[201] == 0 ? save_req = 0 :
+  gmem[201] == 0 ? (save_req = 0;) :
   now - save_req_t > 1.5 ? (
     gmem[201] = 0; save_req = 0;
-    strcpy(#rm, "SOUND FILES · COME WITH THE SEQUENCER RELEASE"); msg();
+    strcpy(#rm, "RUN ACTION 'VOLCA LISTENER (START)'"); msg();
   );
 );
 open_menu == 1 ? sound_menu(ssx, ssy + ssh) : open_menu == 3 ? sound_menu(mouse_x, mouse_y) : open_menu == 4 ? thmenu();
@@ -1394,7 +1409,7 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   gfx_setfont(5, "Consolas", CF(S(14))); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th);
   rc(K_TXT, 0.95); txt(20, mox + mow - tw - S(3), moy + (moh - th) / 2);
   gfx_setfont(4, "Bahnschrift", S(12), 'b');
-  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v1.5.2", wx + S(9), gfx_h - MG - S(16));
+  rc(K_DIM2, 1); txt("NH4X · VOLCA DRUM · v2.0", wx + S(9), gfx_h - MG - S(16));
 ) : (
   // Sleeve: section heads with a thick rule, flat rows (bigger text, the column has room)
   SLW = S(62);   // label column
@@ -1451,14 +1466,14 @@ function shead(s, y) ( rc(K_PLY, 1); gfx_rect(wx, y, WGW, S(4)); sfont(4, S(20))
   sfont(3, S(14)); rc(K_LBL, 1); gfx_measurestr("A", tw, th); txt("A-B", rdx, moy + (moh - th) / 2);
   rc(K_BAR, 0.6); gfx_rect(mox, moy, max(1, mm * mow), moh);
   sfont(5, S(17)); rc(K_TXT, 1); sprintf(20, "%d%%", slider(148)); gfx_measurestr(20, tw, th); rtxt(20, mox + mow - S(4), moy + (moh - th) / 2);
-  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v1.5.2", wx, gfx_h - MG - S(14));
+  sfont(3, S(11)); rc(K_DIM, 1); txt("NH4X · VOLCA DRUM · v2.0", wx, gfx_h - MG - S(14));
 );
 
 // ---- mouse ----
 function hit(x, y) local(i, r) (
   r = 0; i = 1;
   loop(NS,
-    !r && x >= bx[i] && x < bx[i] + bw[i] && y >= by[i] && y < by[i] + bh[i] ? r = i;
+    !r && x >= bx[i] && x < bx[i] + bw[i] && y >= by[i] && y < by[i] + bh[i] ? (r = i;);
     i += 1;
   );
   r;
@@ -1485,8 +1500,9 @@ function ptip(h, sub) local(p_, k_, o_, mi_) (   // v1.4.9.1: full name; a few w
   : h >= 40 && h <= 45 ? strcpy(#rm, "LINK · layer 1 + layer 2 together")
   : h == 50 ? strcpy(#rm, "SEND ALL · whole kit to the Volca")
   : h == 51 ? strcpy(#rm, "SOUND · save / load / copy / paste a part")
+  : h == 52 ? strcpy(#rm, "AUTO SEND · panel sound to the Volca on project load")
   : h == 60 ? strcpy(#rm, "ROW LOCK · stays on ROLL + MORPH")
-  : h == 82 ? strcpy(#rm, "UNDO · last roll / paste / sound load")
+  : h == 82 ? strcpy(#rm, "UNDO · last roll / paste / sound / kit load / morph")
   : h == 85 ? strcpy(#rm, "MORPH · blend A > B")
 
   : h == 100 && sub == 135 ? strcpy(#rm, "WAVEGUIDE BODY · tone of the resonance")   // bars: the click shows the name, no tip
@@ -1499,7 +1515,7 @@ lh_ = -1; q = 0; loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_
 lq_ = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (lq_ = labq[q];); q += 1;);
 sg_ = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? (sg_ = q;); q += 1;);
 tlh = lkhit ? 1 : clhit ? 2 : qh_ >= 0 ? 10 + qh_ : ph_ >= 0 ? 20 + ph_ : pt_ >= 0 && hb_ == 0 ? 30 + pt_ : lh_ >= 0 ? 40 + lh_
-    : inr(sbx, sby, sbw, sbh) ? 50 : inr(ssx, ssy, ssw, ssh) ? 51 : lq_ >= 0 ? 60 + 1000 * (lq_ + 2) : sg_ >= 0 ? 70 + sg_
+    : inr(sbx, sby, sbw, sbh) ? 50 : inr(ssx, ssy, ssw, ssh) ? 51 : inr(aox, aoy, aow, aoh) ? 52 : lq_ >= 0 ? 60 + 1000 * (lq_ + 2) : sg_ >= 0 ? 70 + sg_
     : inr(amx, amy, amw, amh) ? 80 : inr(rbx, rby, rbw, rbh) ? 81 : inr(ubx, rby, rbw, rbh) ? 82
     : inr(rdx, mby_a, rwd, mbh) ? 83 : inr(rdx, mby_b, rwd, mbh) ? 84 : inr(mox, moy, mow, moh) ? 85
     : hb_ > 0 ? 100 + 1000 * (hb_ + 2) : 0;
@@ -1519,12 +1535,12 @@ mouse_cap & 1 ? (
   !mdown ? (
     mdown = 1;
     lhit = -1; q = 0;
-    loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? lhit = q; q += 1;);
-    lq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? lq = labq[q]; q += 1;);
-    sq = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? sq = q; q += 1;);
+    loop(6, mouse_x >= lkx[q] && mouse_x < lkx[q] + lnkww && mouse_y >= lky[q] && mouse_y < lky[q] + lnkhh ? (lhit = q;); q += 1;);
+    lq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (lq = labq[q];); q += 1;);
+    sq = -1; q = 0; loop(4, inr(sgx[q], sgy[q], sgw, sgh) ? (sq = q;); q += 1;);
     ah_i = mouse_cap & 8 ? hit(mouse_x, mouse_y) : 0;   // Shift+click on a bar = lock/unlock that cell
     mouse_cap & 8 && ah_i == 0 ? (vj = vhit(mouse_x, mouse_y); vj > 0 ? (ah_i = vsi[vj - 1];););   // split Select: whole Select cell
-    tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? tq = q; q += 1;);
+    tq = -1; q = 0; loop(7, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? (tq = q;); q += 1;);
     phit = -1; q = 0; loop(6, inr(plx[q], ply[q], plw, plh) ? (phit = q;); q += 1;);
     qhit = -1; q = 0; loop(6, inr(qx[q], qy[q], S(20), lnkhh) ? (qhit = q;); q += 1;);
     // part title: click = select that part (focus), Shift+click = part lock; right-click = SOUND menu (below)
@@ -1547,6 +1563,9 @@ mouse_cap & 1 ? (
       lockm[ah_i] = !lockm[ah_i]; slider_automate(slider(144)); drag = 0;
     ) : lhit >= 0 ? (
       slider(138 + lhit) = slider(138 + lhit) >= 0.5 ? 0 : 1; slider_automate(slider(138 + lhit)); drag = 0;
+    ) : inr(aox, aoy, aow, aoh) ? (   // v1.5.3 AUTO SEND
+      slider157 = slider157 >= 0.5 ? 0 : 1; slider_automate(slider157);
+      strcpy(#rm, slider157 >= 0.5 ? "AUTO SEND ON · the panel sound goes to the Volca when the project loads" : "AUTO SEND OFF · press SEND ALL after loading"); msg(); drag = 0;
     ) : mouse_x >= sbx && mouse_x < sbx + sbw && mouse_y >= sby && mouse_y < sby + sbh ? (
       sendall(); drag = 0;
     ) : inr(ssx, ssy, ssw, ssh) ? (
@@ -1566,7 +1585,7 @@ mouse_cap & 1 ? (
     ) : inr(rdx, mby_b, rwd, mbh) ? (
       setab(1); drag = 0;
     ) : inr(mox, moy, mow, moh) ? (
-      drag = -11;
+      snapundo("MORPH"); drag = -11;
     ) : (vj = vhit(mouse_x, mouse_y)) > 0 ? (
       // split Select: click/drag = the segment under the mouse; double-click = first option
       vd = vj - 1;
@@ -1610,8 +1629,8 @@ mouse_cap & 2 ? (
     rdown = 1;
     rh_i = hit(mouse_x, mouse_y);
     rh_i == 0 ? (vj = vhit(mouse_x, mouse_y); vj > 0 ? (rh_i = vsi[vj - 1];););   // split Select: lock the whole Select cell
-    rq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? rq = labq[q]; q += 1;);
-    rt = -1; q = 0; loop(6, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? rt = q; q += 1;);
+    rq = -1; q = 0; loop(nl, inr(labx[q], laby[q], lw, rh) ? (rq = labq[q];); q += 1;);
+    rt = -1; q = 0; loop(6, inr(ptx[q], pty[q], ptw[q], pthh[q]) ? (rt = q;); q += 1;);
     clhit ? (open_menu = 4;) :
     rh_i > 0 ? (lockm[rh_i] = !lockm[rh_i]; slider_automate(slider(144));) :
     rq >= 0 ? (togglerowall(rq % 32); slider_automate(slider(144));) :
@@ -1637,6 +1656,7 @@ mouse_wheel != 0 ? (
 );
 
 // ---- typed entry: hover a bar, type digits, Enter = set, Esc = cancel, Backspace = delete ----
+tlen > 0 && (now - tyt > 3 || (mouse_cap & 3)) ? (tlen = 0;);   // unfinished entry: gone after 3 s or on a click
 c = gfx_getchar();
 while (c > 0) (
   c >= 48 && c <= 57 ? (
@@ -1646,7 +1666,7 @@ while (c > 0) (
       tval = 0;
     );
     tparam > 0 && tlen < 3 ? (
-      tval = tval * 10 + (c - 48); tlen += 1;
+      tval = tval * 10 + (c - 48); tlen += 1; tyt = now;
       lastchg = tparam; lastchg_t = now;
     );
   ) : c == 13 ? (
@@ -1655,7 +1675,7 @@ while (c > 0) (
   ) : c == 27 ? (
     tlen = 0;
   ) : c == 8 ? (
-    tlen > 0 ? (tval = floor(tval / 10); tlen -= 1;);
+    tlen > 0 ? (tval = floor(tval / 10); tlen -= 1; tyt = now;);
   );
   c = gfx_getchar();
 );
